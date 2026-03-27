@@ -9,7 +9,7 @@ import { createClient } from '@/lib/supabase/server';
 // Returns: { mrr, signups, activeThisWeek, churnRate, trialToPaid, nps, weeklyGrowth }
 
 export async function GET() {
-  const supabase = createClient();
+  const supabase = await createClient();
 
   // ── Auth guard ──────────────────────────────────────────────────────────────
   const {
