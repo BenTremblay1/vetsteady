@@ -1,0 +1,74 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --color-teal: #0D7377;
+  --color-cream: #F7F3EE;
+  --color-amber: #F4A435;
+  --color-text: #1A1A2E;
+  --color-text-muted: #6B7280;
+}
+
+@layer base {
+  * {
+    @apply border-gray-200;
+  }
+
+  body {
+    @apply bg-cream-100 text-gray-900 font-sans antialiased;
+    color: var(--color-text);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-semibold tracking-tight;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply inline-flex items-center justify-center rounded-lg px-4 py-2 text-sm font-medium text-white transition-colors;
+    background-color: var(--color-teal);
+  }
+
+  .btn-primary:hover {
+    background-color: #0a5c5f;
+  }
+
+  .btn-secondary {
+    @apply inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-50;
+  }
+
+  .card {
+    @apply rounded-xl border border-gray-200 bg-white p-4 shadow-sm;
+  }
+
+  /* Status badges */
+  .badge-scheduled  { @apply inline-flex items-center rounded-full bg-blue-50 px-2 py-0.5 text-xs font-medium text-blue-700; }
+  .badge-confirmed  { @apply inline-flex items-center rounded-full bg-green-50 px-2 py-0.5 text-xs font-medium text-green-700; }
+  .badge-completed  { @apply inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-600; }
+  .badge-no_show   { @apply inline-flex items-center rounded-full bg-red-50 px-2 py-0.5 text-xs font-medium text-red-700; }
+  .badge-cancelled  { @apply inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-xs font-medium text-gray-500; }
+}
+
+/* FullCalendar overrides */
+.fc {
+  --fc-border-color: #E5E7EB;
+  --fc-today-bg-color: rgba(13, 115, 119, 0.05);
+  --fc-event-bg-color: #0D7377;
+  --fc-event-border-color: #0D7377;
+  --fc-button-bg-color: #0D7377;
+  --fc-button-border-color: #0D7377;
+  --fc-button-hover-bg-color: #0a5c5f;
+  --fc-button-active-bg-color: #0a5c5f;
+}
+
+.fc-event {
+  @apply cursor-pointer;
+}
+
+.fc-toolbar-title {
+  @apply text-lg font-semibold;
+}
