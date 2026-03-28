@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { ChevronLeft, ChevronRight, Plus } from 'lucide-react';
 import { Appointment } from '@/types';
 import DayColumn, { START_HOUR, END_HOUR, HOUR_HEIGHT_PX } from './DayColumn';
@@ -35,6 +35,16 @@ function formatHour(hour: number): string {
   return `${hour - 12} PM`;
 }
 
+function scrollToCurrentHour(scrollRef: React.RefObject<HTMLDivElement | null>) {
+  if (!scrollRef.current) return;
+  const now = new Date();
+  const currentHour = now.getHours();
+  if (currentHour >= START_HOUR && currentHour < END_HOUR) {
+    const scrollY = (currentHour - START_HOUR) * HOUR_HEIGHT_PX - 80;
+    scrollRef.current.scrollTo({ top: Math.max(0, scrollY), behavior: 'smooth' });
+  }
+}
+
 interface WeekCalendarProps {
   appointments: Appointment[];
   onNewAppointment?: (date: Date, hour: number) => void;
@@ -50,18 +60,28 @@ export default function WeekCalendar({
 }: WeekCalendarProps) {
   const [weekStart, setWeekStart] = useState<Date>(() => getWeekStart(new Date()));
   const totalHeight = HOUR_HEIGHT_PX * (END_HOUR - START_HOUR);
+  const scrollRef = useRef<HTMLDivElement>(null);
 
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
+  const isThisWeek = weekStart.toDateString() === getWeekStart(new Date()).toDateString();
+
+  // When navigating away from this week, scroll to the current time slot for orientation
+  useEffect(() => {
+    if (!isThisWeek) {
+      scrollToCurrentHour(scrollRef);
+    }
+  }, [weekStart, isThisWeek]);
 
   const prevWeek = () => setWeekStart((d) => addDays(d, -7));
   const nextWeek = () => setWeekStart((d) => addDays(d, 7));
-  const goToday  = () => setWeekStart(getWeekStart(new Date()));
+  const goToday = () => {
+    setWeekStart(getWeekStart(new Date()));
+    scrollToCurrentHour(scrollRef);
+  };
 
   const handleSlotClick = useCallback((date: Date, hour: number) => {
     onNewAppointment?.(date, hour);
   }, [onNewAppointment]);
-
-  const isThisWeek = weekStart.toDateString() === getWeekStart(new Date()).toDateString();
 
   return (
     <div className="flex flex-col h-full bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
@@ -138,7 +158,7 @@ export default function WeekCalendar({
       </div>
 
       {/* ── Scrollable grid ── */}
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-y-auto" ref={scrollRef}>
         {loading && (
           <div className="absolute inset-0 bg-white/60 z-20 flex items-center justify-center">
             <div className="text-sm text-gray-400 animate-pulse">Loading…</div>

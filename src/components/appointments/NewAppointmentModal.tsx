@@ -31,8 +31,29 @@ function toLocalDatetimeValue(date: Date): string {
 }
 
 function parseLocalDatetime(val: string): string {
-  // Convert local input value to ISO string
-  return new Date(val).toISOString();
+  // CRITICAL: "2026-03-29T14:30" passed to new Date() is parsed as UTC by Chrome/Safari,
+  // but as local time by Node.js server. This inconsistency causes booking timezone bugs.
+  // Fix: parse components explicitly as local time, then convert to ISO string in UTC.
+  const [datePart, timePart] = val.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const localDate = new Date(year, month - 1, day, hour, minute, 0, 0);
+  return localDate.toISOString();
+}
+
+/** Format a datetime-local value (YYYY-MM-DDTHH:MM) for display — treats it as local time */
+function formatLocalDatetimeDisplay(val: string): string {
+  if (!val) return '—';
+  const [datePart, timePart] = val.split('T');
+  const [year, month, day] = datePart.split('-').map(Number);
+  const [hour, minute] = timePart.split(':').map(Number);
+  const d = new Date(year, month - 1, day, hour, minute, 0, 0);
+  return d.toLocaleDateString('en-US', {
+    weekday: 'long', month: 'long', day: 'numeric',
+    year: 'numeric',
+  }) + ' at ' + d.toLocaleTimeString('en-US', {
+    hour: 'numeric', minute: '2-digit',
+  });
 }
 
 export default function NewAppointmentModal({
@@ -390,11 +411,7 @@ export default function NewAppointmentModal({
           {step === 'confirm' && (
             <div className="space-y-3">
               <ConfirmRow label="Date & Time">
-                {new Date(startsAt).toLocaleDateString('en-US', {
-                  weekday: 'long', month: 'long', day: 'numeric',
-                })} at {new Date(startsAt).toLocaleTimeString('en-US', {
-                  hour: 'numeric', minute: '2-digit',
-                })}
+                {formatLocalDatetimeDisplay(startsAt)}
               </ConfirmRow>
               <ConfirmRow label="Staff">{selectedStaff?.name ?? '—'}</ConfirmRow>
               <ConfirmRow label="Client">
