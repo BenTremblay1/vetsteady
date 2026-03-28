@@ -20,19 +20,31 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  const { data: { user } } = await supabase.auth.getUser();
-
-  const { pathname } = request.nextUrl;
-
   // Public routes — always accessible
-  const publicRoutes = ['/login', '/onboarding', '/confirm', '/auth'];
-  const isPublicRoute = publicRoutes.some((r) => pathname.startsWith(r));
+  const publicRoutes = ['/', '/login', '/onboarding', '/confirm', '/auth'];
+  const { pathname } = request.nextUrl;
+  const isPublicRoute = publicRoutes.some((r) => pathname === r || pathname.startsWith(r));
 
-  if (!user && !isPublicRoute) {
+  // If already on a public route, skip auth check to avoid unnecessary DB calls
+  if (isPublicRoute) {
+    return supabaseResponse;
+  }
+
+  // For protected routes, try auth — but don't crash the whole site if Supabase is unreachable
+  let user = null;
+  try {
+    const { data } = await supabase.auth.getUser();
+    user = data.user;
+  } catch {
+    // Supabase unreachable — let them through to login, don't crash the site
     return NextResponse.redirect(new URL('/login', request.url));
   }
 
-  if (user && pathname === '/login') {
+  if (!user) {
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  if (pathname === '/login') {
     return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 

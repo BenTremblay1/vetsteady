@@ -13,6 +13,7 @@ export default function LandingPage() {
             <a href="#how-it-works" className="hover:text-gray-900 transition-colors">How it works</a>
             <a href="#pricing" className="hover:text-gray-900 transition-colors">Pricing</a>
             <a href="#faq" className="hover:text-gray-900 transition-colors">FAQ</a>
+            <Link href="/compare/petdesk" className="hover:text-gray-900 transition-colors">vs PetDesk</Link>
           </div>
           <div className="flex items-center gap-3">
             <Link href="/login" className="text-sm text-gray-600 hover:text-gray-900 transition-colors">
@@ -34,13 +35,14 @@ export default function LandingPage() {
           Built for independent vet practices
         </div>
         <h1 className="text-5xl md:text-6xl font-bold text-gray-900 leading-tight mb-6 tracking-tight">
-          Every empty slot costs{' '}
-          <span className="text-[#0D7377]">$180.</span>
-          <br />VetSteady fills them.
+          VetSteady's Smart Reminder Engine{' '}
+          <span className="text-[#0D7377]">cuts no-shows by 30%</span>
+          {' '}— automatically.
         </h1>
         <p className="text-xl text-gray-500 max-w-2xl mx-auto mb-10 leading-relaxed">
-          Reduce no-shows by 30% with automated SMS reminders, one-tap confirmation, 
-          and smart scheduling — purpose-built for small veterinary practices.
+          AI-optimized SMS reminders that learn when each client responds best — 
+          purpose-built for 1–3 vet independent practices.
+          Every empty slot costs $180. VetSteady fills them.
         </p>
         <div className="flex flex-col sm:flex-row gap-3 justify-center">
           <Link
@@ -121,9 +123,9 @@ export default function LandingPage() {
           <div className="grid md:grid-cols-2 gap-6">
             {[
               { icon: '📱', title: 'SMS-first reminders', desc: '99% open rate. Clients confirm with one tap — no app download, no login.' },
-              { icon: '📅', title: 'Smart scheduling calendar', desc: 'Day and week views per vet. Colour-coded by appointment type and confirmation status.' },
+              { icon: '🧠', title: 'Smart Reminder Engine', desc: 'AI-optimized timing learns when each client responds best. Reduces no-shows 30%+ without any manual work.' },
               { icon: '🐾', title: 'Pet + client profiles', desc: 'Track no-show history per client. Know who needs a deposit requirement before they book again.' },
-              { icon: '⏰', title: 'Automated reminder timing', desc: '2 weeks → 4 days → 2 days. Configurable per appointment type. Runs without you.' },
+              { icon: '📅', title: 'Smart scheduling calendar', desc: 'Day and week views per vet. Colour-coded by appointment type and confirmation status.' },
               { icon: '🔗', title: 'Online booking portal', desc: 'Your own booking page at vetsteady.com/book/your-practice. Clients self-schedule wellness & tech appointments.' },
               { icon: '💳', title: 'Deposit collection', desc: 'Require deposits for new clients or high-risk appointments. Stripe-powered, frictionless.' },
             ].map(({ icon, title, desc }) => (
