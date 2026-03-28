@@ -425,6 +425,17 @@ function ClientDetailModal({
 }) {
   const [pets, setPets] = useState<Pet[]>([]);
   const [loadingPets, setLoadingPets] = useState(true);
+  const [editing, setEditing] = useState(false);
+  const [saving, setSaving] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    first_name: client.first_name,
+    last_name: client.last_name,
+    email: client.email ?? '',
+    phone: client.phone ?? '',
+    preferred_contact: client.preferred_contact,
+    notes: client.notes ?? '',
+  });
 
   useEffect(() => {
     fetch(`/api/v1/clients/${client.id}/pets`)
@@ -434,6 +445,27 @@ function ClientDetailModal({
       .finally(() => setLoadingPets(false));
   }, [client.id]);
 
+  const handleSave = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setSaving(true);
+    setEditError(null);
+    try {
+      const res = await fetch(`/api/v1/clients/${client.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(editForm),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to update');
+      onUpdated();
+      onClose();
+    } catch (err: any) {
+      setEditError(err.message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const speciesEmoji: Record<string, string> = {
     dog: '🐕', cat: '🐈', bird: '🦜', other: '🐾',
   };
@@ -441,91 +473,131 @@ function ClientDetailModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 backdrop-blur-sm">
       <div className="bg-white rounded-2xl shadow-xl w-full max-w-md mx-4 overflow-y-auto max-h-[85vh]">
+        {/* Header */}
         <div className="p-6 border-b border-gray-100 flex items-start justify-between">
           <div>
             <h2 className="text-lg font-semibold text-gray-900">
-              {client.first_name} {client.last_name}
+              {editing ? 'Edit Client' : `${client.first_name} ${client.last_name}`}
             </h2>
-            <p className="text-sm text-gray-500 mt-0.5">Client profile</p>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {editing ? 'Update client details' : 'Client profile'}
+            </p>
           </div>
-          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          <div className="flex items-center gap-2">
+            {!editing && (
+              <button
+                onClick={() => setEditing(true)}
+                className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors font-medium"
+              >
+                Edit
+              </button>
+            )}
+            <button onClick={onClose} className="text-gray-400 hover:text-gray-600 text-xl leading-none">&times;</button>
+          </div>
         </div>
 
-        <div className="p-6 space-y-5">
-          {/* Contact */}
-          <section>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Contact</h3>
-            <div className="space-y-1 text-sm text-gray-700">
-              {client.phone && (
-                <div className="flex items-center gap-2"><Phone size={14} className="text-gray-400" />{client.phone}</div>
-              )}
-              {client.email && (
-                <div className="flex items-center gap-2"><Mail size={14} className="text-gray-400" />{client.email}</div>
-              )}
-              <div className="text-xs text-gray-400 mt-1">
-                Preferred: <strong>{client.preferred_contact.toUpperCase()}</strong>
+        {/* Body */}
+        {editing ? (
+          <form onSubmit={handleSave} className="p-6 space-y-4">
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">First Name *</label>
+                <input required value={editForm.first_name} onChange={(e) => setEditForm({ ...editForm, first_name: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties} />
+              </div>
+              <div>
+                <label className="block text-xs font-medium text-gray-600 mb-1">Last Name *</label>
+                <input required value={editForm.last_name} onChange={(e) => setEditForm({ ...editForm, last_name: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties} />
               </div>
             </div>
-          </section>
-
-          {/* Stats */}
-          <section>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">History</h3>
-            <div className="grid grid-cols-2 gap-2">
-              {[
-                { label: 'No-shows', value: client.no_show_count, danger: client.no_show_count > 0 },
-                { label: 'Late cancels', value: client.late_cancel_count, danger: client.late_cancel_count > 1 },
-              ].map((s) => (
-                <div
-                  key={s.label}
-                  className={cn(
-                    'rounded-xl p-3 text-center border',
-                    s.danger ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50'
-                  )}
-                >
-                  <p className={cn('text-2xl font-bold', s.danger ? 'text-red-500' : 'text-gray-700')}>{s.value}</p>
-                  <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
-                </div>
-              ))}
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Phone</label>
+              <input value={editForm.phone} onChange={(e) => setEditForm({ ...editForm, phone: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties} />
             </div>
-          </section>
-
-          {/* Notes */}
-          {client.notes && (
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Email</label>
+              <input type="email" value={editForm.email} onChange={(e) => setEditForm({ ...editForm, email: e.target.value })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2" style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties} />
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Preferred Contact</label>
+              <select value={editForm.preferred_contact} onChange={(e) => setEditForm({ ...editForm, preferred_contact: e.target.value as 'sms' | 'email' | 'both' })} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white" style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}>
+                <option value="sms">SMS</option>
+                <option value="email">Email</option>
+                <option value="both">Both</option>
+              </select>
+            </div>
+            <div>
+              <label className="block text-xs font-medium text-gray-600 mb-1">Notes</label>
+              <textarea value={editForm.notes} onChange={(e) => setEditForm({ ...editForm, notes: e.target.value })} rows={2} className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 resize-none" style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties} />
+            </div>
+            {editError && <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-3 py-2 text-sm">{editError}</div>}
+            <div className="flex gap-3">
+              <button type="button" onClick={() => setEditing(false)} className="flex-1 px-4 py-2 border border-gray-200 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-50">Cancel</button>
+              <button type="submit" disabled={saving} className="flex-1 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-60" style={{ backgroundColor: '#0D7377' }}>{saving ? 'Saving…' : 'Save Changes'}</button>
+            </div>
+          </form>
+        ) : (
+          <div className="p-6 space-y-5">
+            {/* Contact */}
             <section>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Notes</h3>
-              <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{client.notes}</p>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Contact</h3>
+              <div className="space-y-1 text-sm text-gray-700">
+                {client.phone && <div className="flex items-center gap-2"><Phone size={14} className="text-gray-400" />{client.phone}</div>}
+                {client.email && <div className="flex items-center gap-2"><Mail size={14} className="text-gray-400" />{client.email}</div>}
+                <div className="text-xs text-gray-400 mt-1">Preferred: <strong>{client.preferred_contact.toUpperCase()}</strong></div>
+              </div>
             </section>
-          )}
 
-          {/* Pets */}
-          <section>
-            <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Pets</h3>
-            {loadingPets ? (
-              <p className="text-xs text-gray-400">Loading…</p>
-            ) : pets.length === 0 ? (
-              <p className="text-sm text-gray-400">No pets on record.</p>
-            ) : (
-              <div className="space-y-2">
-                {pets.map((p) => (
-                  <div key={p.id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
-                    <span className="text-xl">{speciesEmoji[p.species] ?? '🐾'}</span>
-                    <div>
-                      <p className="text-sm font-medium text-gray-900">{p.name}</p>
-                      <p className="text-xs text-gray-400">
-                        {p.species}{p.breed ? ` · ${p.breed}` : ''}{p.weight_kg ? ` · ${p.weight_kg} kg` : ''}
-                      </p>
-                    </div>
+            {/* Stats */}
+            <section>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">History</h3>
+              <div className="grid grid-cols-2 gap-2">
+                {[
+                  { label: 'No-shows', value: client.no_show_count, danger: client.no_show_count > 0 },
+                  { label: 'Late cancels', value: client.late_cancel_count, danger: client.late_cancel_count > 1 },
+                ].map((s) => (
+                  <div key={s.label} className={cn('rounded-xl p-3 text-center border', s.danger ? 'border-red-200 bg-red-50' : 'border-gray-100 bg-gray-50')}>
+                    <p className={cn('text-2xl font-bold', s.danger ? 'text-red-500' : 'text-gray-700')}>{s.value}</p>
+                    <p className="text-xs text-gray-400 mt-0.5">{s.label}</p>
                   </div>
                 ))}
               </div>
-            )}
-          </section>
+            </section>
 
-          <div className="text-xs text-gray-300 text-right">
-            Client since {new Date(client.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            {/* Notes */}
+            {client.notes && (
+              <section>
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Notes</h3>
+                <p className="text-sm text-gray-600 bg-gray-50 rounded-lg p-3">{client.notes}</p>
+              </section>
+            )}
+
+            {/* Pets */}
+            <section>
+              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Pets</h3>
+              {loadingPets ? (
+                <p className="text-xs text-gray-400">Loading…</p>
+              ) : pets.length === 0 ? (
+                <p className="text-sm text-gray-400">No pets on record.</p>
+              ) : (
+                <div className="space-y-2">
+                  {pets.map((p) => (
+                    <div key={p.id} className="flex items-center gap-3 bg-gray-50 rounded-xl p-3">
+                      <span className="text-xl">{speciesEmoji[p.species] ?? '🐾'}</span>
+                      <div>
+                        <p className="text-sm font-medium text-gray-900">{p.name}</p>
+                        <p className="text-xs text-gray-400">{p.species}{p.breed ? ` · ${p.breed}` : ''}{p.weight_kg ? ` · ${p.weight_kg} kg` : ''}</p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </section>
+
+            <div className="text-xs text-gray-300 text-right">
+              Client since {new Date(client.created_at).toLocaleDateString('en-US', { month: 'long', year: 'numeric' })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
