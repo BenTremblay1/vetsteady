@@ -65,12 +65,13 @@ export default function WeekCalendar({
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(weekStart, i));
   const isThisWeek = weekStart.toDateString() === getWeekStart(new Date()).toDateString();
 
-  // When navigating away from this week, scroll to the current time slot for orientation
+  // When navigating to a different week, scroll to the top of the day (morning hours)
+  // so the user sees the full day layout, not just the current-time slot
   useEffect(() => {
-    if (!isThisWeek) {
-      scrollToCurrentHour(scrollRef);
+    if (scrollRef.current) {
+      scrollRef.current.scrollTo({ top: 0, behavior: 'smooth' });
     }
-  }, [weekStart, isThisWeek]);
+  }, [weekStart]);
 
   const prevWeek = () => setWeekStart((d) => addDays(d, -7));
   const nextWeek = () => setWeekStart((d) => addDays(d, 7));

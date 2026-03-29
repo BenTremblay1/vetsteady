@@ -39,8 +39,10 @@ export function initPostHog() {
     capture_pageview: false,
     // Respect Do Not Track
     respect_dnt: true,
-    // Disable session recording in trial mode unless explicitly enabled
-    disable_session_recording: false,
+    // Disable session recording — Shepherd integration imports PHI (client names,
+    // phone numbers, pet names) into the dashboard UI. Session recordings would
+    // capture this. Re-enable only if a non-PHI dashboard is shipped upstream.
+    disable_session_recording: true,
   });
 
   initialised = true;

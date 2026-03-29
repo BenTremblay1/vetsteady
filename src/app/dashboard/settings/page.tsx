@@ -1,14 +1,26 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Bell, Clock, Tag, Plus, Trash2 } from 'lucide-react';
+import { Save, Bell, Clock, Tag, Plus, Trash2, Plug } from 'lucide-react';
 import { AppointmentType, PracticeSettings } from '@/types';
+import dynamic from 'next/dynamic';
 
 // ─── Settings Page ───────────────────────────────────────────────────────────
 // Allows admins to configure: reminder timing, appointment types, practice info.
 
+// Lazy-load the integrations panel (avoids SSR for API calls)
+const IntegrationsSettings = dynamic(() => import('@/components/settings/IntegrationsSettings'), {
+  ssr: false,
+  loading: () => (
+    <div className="space-y-4 animate-pulse">
+      <div className="h-8 w-48 bg-gray-100 rounded" />
+      <div className="h-4 w-72 bg-gray-100 rounded" />
+    </div>
+  ),
+});
+
 export default function SettingsPage() {
-  const [activeTab, setActiveTab] = useState<'reminders' | 'types' | 'practice'>('reminders');
+  const [activeTab, setActiveTab] = useState<'reminders' | 'types' | 'practice' | 'integrations'>('reminders');
 
   return (
     <div className="flex flex-col gap-4">
@@ -20,9 +32,10 @@ export default function SettingsPage() {
       {/* Tab bar */}
       <div className="flex gap-1 bg-gray-100 rounded-xl p-1 w-fit">
         {([
-          { id: 'reminders', label: '🔔 Reminders' },
-          { id: 'types',     label: '📋 Appt Types' },
-          { id: 'practice',  label: '🏥 Practice' },
+          { id: 'reminders',     label: '🔔 Reminders' },
+          { id: 'types',         label: '📋 Appt Types' },
+          { id: 'practice',      label: '🏥 Practice' },
+          { id: 'integrations',  label: '🔌 Integrations' },
         ] as const).map((tab) => (
           <button
             key={tab.id}
@@ -41,6 +54,7 @@ export default function SettingsPage() {
       {activeTab === 'reminders' && <ReminderSettings />}
       {activeTab === 'types' && <AppointmentTypesSettings />}
       {activeTab === 'practice' && <PracticeInfoSettings />}
+      {activeTab === 'integrations' && <IntegrationsSettings />}
     </div>
   );
 }

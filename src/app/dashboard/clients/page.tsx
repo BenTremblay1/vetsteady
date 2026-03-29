@@ -437,6 +437,19 @@ function ClientDetailModal({
     notes: client.notes ?? '',
   });
 
+  // Add pet state
+  const [addingPet, setAddingPet] = useState(false);
+  const [savingPet, setSavingPet] = useState(false);
+  const [petError, setPetError] = useState<string | null>(null);
+  const [petForm, setPetForm] = useState({
+    name: '',
+    species: 'dog' as Pet['species'],
+    breed: '',
+    date_of_birth: '',
+    weight_kg: undefined as number | undefined,
+    notes: '',
+  });
+
   useEffect(() => {
     fetch(`/api/v1/clients/${client.id}/pets`)
       .then((r) => r.json())
@@ -444,6 +457,29 @@ function ClientDetailModal({
       .catch(console.error)
       .finally(() => setLoadingPets(false));
   }, [client.id]);
+
+  async function handleAddPet(e: React.FormEvent) {
+    e.preventDefault();
+    if (!petForm.name.trim()) return;
+    setSavingPet(true);
+    setPetError(null);
+    try {
+      const res = await fetch(`/api/v1/clients/${client.id}/pets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ ...petForm, client_id: client.id }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to add pet');
+      setPets((prev) => [...prev, json.data]);
+      setPetForm({ name: '', species: 'dog', breed: '', date_of_birth: '', weight_kg: undefined, notes: '' });
+      setAddingPet(false);
+    } catch (err: any) {
+      setPetError(err.message);
+    } finally {
+      setSavingPet(false);
+    }
+  }
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -573,10 +609,21 @@ function ClientDetailModal({
 
             {/* Pets */}
             <section>
-              <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide mb-2">Pets</h3>
+              <div className="flex items-center justify-between mb-2">
+                <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Pets</h3>
+                {!addingPet && (
+                  <button
+                    onClick={() => setAddingPet(true)}
+                    className="flex items-center gap-1 text-xs font-medium px-2 py-1 rounded-lg border border-gray-200 text-gray-600 hover:bg-gray-50 transition-colors"
+                  >
+                    <Plus size={11} /> Add Pet
+                  </button>
+                )}
+              </div>
+
               {loadingPets ? (
                 <p className="text-xs text-gray-400">Loading…</p>
-              ) : pets.length === 0 ? (
+              ) : pets.length === 0 && !addingPet ? (
                 <p className="text-sm text-gray-400">No pets on record.</p>
               ) : (
                 <div className="space-y-2">
@@ -590,6 +637,94 @@ function ClientDetailModal({
                     </div>
                   ))}
                 </div>
+              )}
+
+              {/* Add Pet inline form */}
+              {addingPet && (
+                <form onSubmit={handleAddPet} className="mt-3 space-y-2 bg-gray-50 rounded-xl p-3">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Pet Name *</label>
+                      <input
+                        required
+                        value={petForm.name}
+                        onChange={(e) => setPetForm({ ...petForm, name: e.target.value })}
+                        placeholder="Buddy"
+                        className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Species *</label>
+                      <select
+                        value={petForm.species}
+                        onChange={(e) => setPetForm({ ...petForm, species: e.target.value as Pet['species'] })}
+                        className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      >
+                        <option value="dog">Dog</option>
+                        <option value="cat">Cat</option>
+                        <option value="bird">Bird</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-medium text-gray-600 mb-1">Breed</label>
+                    <input
+                      value={petForm.breed}
+                      onChange={(e) => setPetForm({ ...petForm, breed: e.target.value })}
+                      placeholder="Golden Retriever"
+                      className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 bg-white"
+                      style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Date of Birth</label>
+                      <input
+                        type="date"
+                        value={petForm.date_of_birth}
+                        onChange={(e) => setPetForm({ ...petForm, date_of_birth: e.target.value })}
+                        className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Weight (kg)</label>
+                      <input
+                        type="number"
+                        step="0.1"
+                        value={petForm.weight_kg ?? ''}
+                        onChange={(e) => setPetForm({ ...petForm, weight_kg: parseFloat(e.target.value) || undefined })}
+                        placeholder="12.5"
+                        className="w-full border border-gray-200 rounded-lg px-2.5 py-1.5 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      />
+                    </div>
+                  </div>
+                  {petError && (
+                    <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg px-2.5 py-1.5 text-xs">{petError}</div>
+                  )}
+                  <div className="flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => { setAddingPet(false); setPetError(null); }}
+                      className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                    >
+                      Cancel
+                    </button>
+                    <button
+                      type="submit"
+                      disabled={savingPet}
+                      className="flex-1 px-3 py-1.5 rounded-lg text-xs font-medium text-white disabled:opacity-60"
+                      style={{ backgroundColor: '#0D7377' }}
+                    >
+                      {savingPet ? 'Saving…' : 'Add Pet'}
+                    </button>
+                  </div>
+                </form>
               )}
             </section>
 

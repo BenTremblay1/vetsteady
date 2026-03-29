@@ -36,7 +36,7 @@ export async function POST(request: Request) {
 
   const body: CreateAppointmentInput = await request.json();
 
-  // Get appointment type to compute end time
+  // Verify appointment type exists and get duration
   const { data: apptType } = await supabase
     .from('appointment_types')
     .select('duration_minutes')
@@ -46,21 +46,29 @@ export async function POST(request: Request) {
   const endsAt = computeEndsAt(body.starts_at, apptType?.duration_minutes ?? 30);
   const confirmationToken = generateConfirmationToken();
 
-  const { data, error } = await supabase
-    .from('appointments')
-    .insert({
-      ...body,
-      ends_at: endsAt,
-      confirmation_token: confirmationToken,
-      status: 'scheduled',
-    })
-    .select('*, staff(*), client:clients(*), pet:pets(*), appointment_type:appointment_types(*)')
-    .single();
+  // Use service role client to bypass RLS circular dependency during insert
+  const admin = createServiceClient();
+  const { data, error } = await admin.rpc('insert_appointment', {
+    p_practice_id: body.practice_id,
+    p_staff_id: body.staff_id,
+    p_client_id: body.client_id,
+    p_pet_id: body.pet_id,
+    p_appointment_type_id: body.appointment_type_id,
+    p_starts_at: body.starts_at,
+    p_ends_at: endsAt,
+    p_status: 'scheduled',
+    p_confirmation_token: confirmationToken,
+    p_notes: body.notes ?? null,
+    p_deposit_paid: false,
+  });
 
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 });
+  if (error) {
+    console.error('[appointments] Insert error:', error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
 
   // Queue reminder jobs (non-blocking — don't fail the request if queue is unavailable)
-  const practice = await supabase
+  const { data: practice } = await supabase
     .from('practices')
     .select('settings')
     .eq('id', data.practice_id)
@@ -70,7 +78,7 @@ export async function POST(request: Request) {
     data.id,
     data.practice_id,
     data.starts_at,
-    practice.data?.settings?.reminder_timing
+    practice?.settings?.reminder_timing
   ).catch((err) => {
     console.error('[appointments] Failed to schedule reminders:', err?.message);
   });

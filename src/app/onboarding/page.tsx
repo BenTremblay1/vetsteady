@@ -16,12 +16,13 @@ import { trackOnboardingComplete, identify } from '@/lib/analytics/posthog';
 // On submit: calls /api/v1/onboarding which runs the
 // create_practice_with_admin() Postgres function + seeds default appointment types.
 
-type Step = 'account' | 'practice' | 'staff';
+type Step = 'account' | 'practice' | 'staff' | 'team';
 
 const STEPS: { id: Step; label: string; icon: React.ReactNode }[] = [
   { id: 'account',  label: 'Account',  icon: <User size={16} /> },
   { id: 'practice', label: 'Practice', icon: <Building2 size={16} /> },
   { id: 'staff',    label: 'Your Info', icon: <Stethoscope size={16} /> },
+  { id: 'team',     label: 'Team',     icon: <User size={16} /> },
 ];
 
 const TIMEZONES = [
@@ -64,6 +65,24 @@ export default function OnboardingPage() {
   const [staffName, setStaffName] = useState('');
   const [staffRole, setStaffRole] = useState<'admin' | 'vet' | 'receptionist'>('admin');
 
+  // Step 4 — team (additional staff)
+  const [extraStaff, setExtraStaff] = useState<Array<{ name: string; role: 'vet' | 'receptionist' }>>([]);
+  const [addingStaff, setAddingStaff] = useState(false);
+  const [newStaffName, setNewStaffName] = useState('');
+  const [newStaffRole, setNewStaffRole] = useState<'vet' | 'receptionist'>('vet');
+
+  function addExtraStaff() {
+    if (!newStaffName.trim()) return;
+    setExtraStaff((prev) => [...prev, { name: newStaffName.trim(), role: newStaffRole }]);
+    setNewStaffName('');
+    setNewStaffRole('vet');
+    setAddingStaff(false);
+  }
+
+  function removeExtraStaff(index: number) {
+    setExtraStaff((prev) => prev.filter((_, i) => i !== index));
+  }
+
   const stepIndex = STEPS.findIndex((s) => s.id === step);
 
   // ─── Step 1: Send magic link ──────────────────────────────────────────────
@@ -87,7 +106,7 @@ export default function OnboardingPage() {
     }
   }
 
-  // ─── Step 3: Final submit ─────────────────────────────────────────────────
+  // ─── Step 4: Final submit ─────────────────────────────────────────────────
   async function handleFinish() {
     if (!practiceName.trim() || !staffName.trim()) return;
     setSubmitting(true);
@@ -103,6 +122,7 @@ export default function OnboardingPage() {
           timezone,
           staff_name: staffName.trim(),
           staff_role: staffRole,
+          extra_staff: extraStaff,
         }),
       });
       const json = await res.json();
