@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Check, Building2, User, Stethoscope, ArrowRight } from 'lucide-react';
+import { Check, Building2, User, Stethoscope, ArrowRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { trackOnboardingComplete, identify } from '@/lib/analytics/posthog';
 
@@ -374,6 +374,141 @@ export default function OnboardingPage() {
               </div>
             )}
 
+            {/* ── Step 4: Team ── */}
+            {step === 'team' && (
+              <div className="space-y-6">
+                <div>
+                  <h2 className="text-xl font-semibold text-gray-900">Your team</h2>
+                  <p className="mt-1 text-sm text-gray-500">
+                    Add other vets or receptionists at <strong>{practiceName}</strong>. You can always add more later.
+                  </p>
+                </div>
+
+                {extraStaff.length > 0 && (
+                  <div className="space-y-2">
+                    <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">Added</p>
+                    {extraStaff.map((s, i) => (
+                      <div key={i} className="flex items-center justify-between bg-gray-50 rounded-xl px-4 py-2.5">
+                        <div className="flex items-center gap-2">
+                          <User size={14} className="text-gray-400" />
+                          <span className="text-sm font-medium text-gray-800">{s.name}</span>
+                          <span className="text-xs text-gray-400 capitalize">{s.role}</span>
+                        </div>
+                        <button
+                          onClick={() => removeExtraStaff(i)}
+                          className="text-gray-400 hover:text-red-500 text-sm transition-colors"
+                        >
+                          Remove
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {extraStaff.length === 0 && (
+                  <div className="text-center py-8 text-gray-400">
+                    <User size={32} className="mx-auto mb-2 text-gray-200" />
+                    <p className="text-sm">No additional team members yet.</p>
+                    <p className="text-xs mt-1">Add your associate vets or receptionists below.</p>
+                  </div>
+                )}
+
+                {!addingStaff ? (
+                  <button
+                    onClick={() => setAddingStaff(true)}
+                    className="w-full flex items-center justify-center gap-2 py-2.5 border-2 border-dashed border-gray-200 rounded-xl text-sm text-gray-500 hover:border-teal-400 hover:text-teal-600 transition-colors"
+                  >
+                    <Plus size={15} /> Add Team Member
+                  </button>
+                ) : (
+                  <div className="space-y-3 bg-gray-50 rounded-xl p-4">
+                    <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">New Team Member</p>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Full Name *</label>
+                      <input
+                        type="text"
+                        value={newStaffName}
+                        onChange={(e) => setNewStaffName(e.target.value)}
+                        placeholder="Dr. Jamie Lee"
+                        className="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                        autoFocus
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-medium text-gray-600 mb-1">Role *</label>
+                      <div className="grid grid-cols-2 gap-2">
+                        {([
+                          { value: 'vet',          label: 'Veterinarian', desc: 'Bookable vet' },
+                          { value: 'receptionist', label: 'Receptionist', desc: 'Front desk' },
+                        ] as const).map((r) => (
+                          <button
+                            key={r.value}
+                            type="button"
+                            onClick={() => setNewStaffRole(r.value)}
+                            className={cn(
+                              'flex flex-col items-center gap-0.5 p-2.5 rounded-xl border text-xs transition-colors',
+                              newStaffRole === r.value
+                                ? 'border-teal-500 bg-teal-50 text-teal-800'
+                                : 'border-gray-200 text-gray-600 hover:border-gray-300 bg-white',
+                            )}
+                          >
+                            <span className="font-medium">{r.label}</span>
+                            <span className="opacity-60 text-[10px]">{r.desc}</span>
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        onClick={() => { setAddingStaff(false); setNewStaffName(''); }}
+                        className="flex-1 px-3 py-1.5 border border-gray-200 rounded-lg text-xs font-medium text-gray-600 hover:bg-gray-100 transition-colors"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="button"
+                        onClick={addExtraStaff}
+                        disabled={!newStaffName.trim()}
+                        className="flex-1 px-3 py-1.5 rounded-lg text-xs font-medium text-white disabled:opacity-50 transition-opacity"
+                        style={{ backgroundColor: '#0D7377' }}
+                      >
+                        Add
+                      </button>
+                    </div>
+                  </div>
+                )}
+
+                {error && (
+                  <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl px-4 py-3 text-sm">
+                    {error}
+                  </div>
+                )}
+
+                <div className="flex gap-3">
+                  <button
+                    onClick={() => setStep('staff')}
+                    className="px-4 py-2.5 rounded-xl text-sm font-medium text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors"
+                  >
+                    Back
+                  </button>
+                  <button
+                    onClick={handleFinish}
+                    disabled={submitting}
+                    className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
+                    style={{ backgroundColor: '#0D7377' }}
+                  >
+                    {submitting ? 'Setting up…' : (
+                      <>
+                        Launch VetSteady <Check size={16} />
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* ── Step 3: Your Info ── */}
             {step === 'staff' && (
               <div className="space-y-6">
@@ -463,16 +598,12 @@ export default function OnboardingPage() {
                     Back
                   </button>
                   <button
-                    onClick={handleFinish}
-                    disabled={submitting || !staffName.trim()}
+                    onClick={() => setStep('team')}
+                    disabled={!staffName.trim()}
                     className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-semibold text-white transition-opacity disabled:opacity-50"
                     style={{ backgroundColor: '#0D7377' }}
                   >
-                    {submitting ? 'Setting up…' : (
-                      <>
-                        Launch VetSteady <Check size={16} />
-                      </>
-                    )}
+                    Next: Add Team <ArrowRight size={16} />
                   </button>
                 </div>
               </div>
