@@ -15,12 +15,26 @@ function formatDate(isoDate: string): string {
   });
 }
 
-function formatSlotTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString('en-US', {
-    hour: 'numeric',
-    minute: '2-digit',
-    hour12: true,
-  });
+/**
+ * Format a UTC ISO slot time for display in the practice's timezone.
+ * Falls back gracefully if the timezone is invalid.
+ */
+function formatSlotTime(iso: string, tz: string): string {
+  try {
+    return new Intl.DateTimeFormat('en-US', {
+      timeZone: tz,
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    }).format(new Date(iso));
+  } catch {
+    // Fallback to local time if timezone is invalid
+    return new Date(iso).toLocaleTimeString('en-US', {
+      hour: 'numeric',
+      minute: '2-digit',
+      hour12: true,
+    });
+  }
 }
 
 function getMonday(d: Date): Date {
@@ -233,7 +247,7 @@ export default function BookingStep2DateSlot({ slug, selections, timezone, onNex
                         : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:shadow-sm'
                       }`}
                   >
-                    {formatSlotTime(slot)}
+                    {formatSlotTime(slot, timezone)}
                   </button>
                 );
               })}
@@ -250,7 +264,7 @@ export default function BookingStep2DateSlot({ slug, selections, timezone, onNex
               d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
           </svg>
           <span>
-            <strong>{formatDate(selectedDate)}</strong> at <strong>{formatSlotTime(selectedSlot)}</strong>
+            <strong>{formatDate(selectedDate)}</strong> at <strong>{formatSlotTime(selectedSlot, timezone)}</strong>
             {' '}({duration} min)
           </span>
         </div>
