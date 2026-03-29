@@ -137,7 +137,7 @@ export default function FullCalendarView({
           headerToolbar={{
             left: 'prev,next today',
             center: 'title',
-            right: 'timeGridWeek,timeGridDay',
+            right: 'dayGridMonth,timeGridWeek,timeGridDay',
           }}
           buttonText={{
             today: 'Today',
@@ -152,7 +152,6 @@ export default function FullCalendarView({
           selectMirror={true}
           select={handleDateSelect}
           slotMinTime="07:00:00"
-          slotMaxTime="19:00:00"
           slotDuration="00:30:00"
           slotLabelInterval="01:00:00"
           slotLabelFormat={{ hour: 'numeric', minute: '2-digit', meridiem: 'short' }}
@@ -161,6 +160,9 @@ export default function FullCalendarView({
           allDaySlot={false}
           expandRows={true}
           stickyHeaderDates={true}
+          titleFormat={{ month: 'long', year: 'numeric' }}
+          dayHeaderFormat={{ weekday: 'long', month: 'numeric', day: 'numeric' }}
+          slotMaxTime="20:00:00"
           eventTimeFormat={{ hour: 'numeric', minute: '2-digit', meridiem: 'short' }}
           dayHeaderFormat={{ weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true }}
           businessHours={{
