@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, Fragment } from 'react';
-import { X, Calendar, Clock, User, Dog, Stethoscope, ChevronDown } from 'lucide-react';
+import { X, Calendar, Clock, User, Dog, Stethoscope, ChevronDown, Plus, ChevronRight, ChevronLeft } from 'lucide-react';
 import { Client, Pet, Staff, AppointmentType, CreateAppointmentInput } from '@/types';
 import { cn } from '@/lib/utils/cn';
 import { trackFirstAppointmentCreated } from '@/lib/analytics/posthog';
@@ -79,8 +79,15 @@ export default function NewAppointmentModal({
   const [selectedStaffId, setSelectedStaffId]   = useState('');
   const [selectedClientId, setSelectedClientId] = useState('');
   const [selectedPetId, setSelectedPetId]       = useState('');
-  const [selectedTypeId, setSelectedTypeId]     = useState('');
+  const [selectedTypeId, setSelectedTypeId]    = useState('');
   const [notes, setNotes]                       = useState('');
+
+  // ── Inline "Add Client" form ─────────────────────────────────────────────
+  const [showAddClient, setShowAddClient]       = useState(false);
+  const [addClientLoading, setAddClientLoading] = useState(false);
+  const [addClientError, setAddClientError]     = useState<string | null>(null);
+  const [newClient, setNewClient] = useState({ first_name: '', last_name: '', phone: '', email: '' });
+  const [newPet, setNewPet]       = useState({ name: '', species: 'dog' as const, breed: '' });
 
   // Derived
   const selectedClient = clients.find((c) => c.id === selectedClientId);
@@ -146,7 +153,13 @@ export default function NewAppointmentModal({
     try {
       const res = await fetch(`/api/v1/clients/${clientId}/pets`);
       const data = await res.json();
-      setPets(data.data ?? []);
+      // Merge with existing pets so newly created pets appear immediately
+      const newPets: Pet[] = data.data ?? [];
+      setPets((prev) => {
+        const existingIds = new Set(prev.filter((p) => p.client_id !== clientId).map((p) => p.id));
+        const unique = newPets.filter((np) => !existingIds.has(np.id));
+        return [...prev.filter((p) => p.client_id !== clientId), ...unique];
+      });
     } catch (e) {
       console.error('[NewAppointmentModal] Failed to load pets:', e);
     }
@@ -158,6 +171,60 @@ export default function NewAppointmentModal({
       case 'client':   return !!selectedClientId && !!selectedPetId;
       case 'details':  return !!selectedTypeId;
       case 'confirm':  return true;
+    }
+  }
+
+  async function handleAddClientInline() {
+    if (!newClient.first_name.trim() || !newClient.last_name.trim()) return;
+    setAddClientLoading(true);
+    setAddClientError(null);
+    try {
+      // 1. Create client
+      const clientRes = await fetch('/api/v1/clients', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          first_name: newClient.first_name.trim(),
+          last_name: newClient.last_name.trim(),
+          phone: newClient.phone.trim() || null,
+          email: newClient.email.trim() || null,
+          preferred_contact: newClient.phone ? 'sms' : 'email',
+        }),
+      });
+      const clientJson = await clientRes.json();
+      if (!clientRes.ok) throw new Error(clientJson.error ?? 'Failed to create client');
+      const created: Client = clientJson.data;
+
+      // 2. Create pet linked to client
+      const petRes = await fetch(`/api/v1/clients/${created.id}/pets`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: newPet.name.trim() || created.first_name + "'s Pet",
+          species: newPet.species,
+          breed: newPet.breed.trim() || null,
+        }),
+      });
+      const petJson = await petRes.json();
+      if (!petRes.ok) throw new Error(petJson.error ?? 'Failed to create pet');
+      const createdPet: Pet = petJson.data;
+
+      // 3. Refresh client + pet lists and pre-select
+      const [clientsRes] = await Promise.all([
+        fetch('/api/v1/clients?limit=200'),
+        loadPets(created.id),
+      ]);
+      const clientsData = await clientsRes.json();
+      setClients(clientsData.data ?? []);
+      setSelectedClientId(created.id);
+      setSelectedPetId(createdPet.id);
+      setShowAddClient(false);
+      setNewClient({ first_name: '', last_name: '', phone: '', email: '' });
+      setNewPet({ name: '', species: 'dog', breed: '' });
+    } catch (err: any) {
+      setAddClientError(err.message);
+    } finally {
+      setAddClientLoading(false);
     }
   }
 
@@ -291,7 +358,7 @@ export default function NewAppointmentModal({
           )}
 
           {/* ─── Step 2: Client & Pet ─── */}
-          {step === 'client' && (
+          {step === 'client' && !showAddClient && (
             <>
               <FormField label="Search Client" icon={<User size={15} />}>
                 <input
@@ -364,6 +431,98 @@ export default function NewAppointmentModal({
                   )}
                 </FormField>
               )}
+
+              {/* ── Inline "Add Client + Pet" ── */}
+              <div className="border-t border-gray-100 pt-3">
+                {!showAddClient ? (
+                  <button
+                    onClick={() => setShowAddClient(true)}
+                    className="flex items-center gap-2 w-full px-3 py-2 rounded-lg text-sm text-teal-700 bg-teal-50 hover:bg-teal-100 font-medium transition-colors"
+                  >
+                    <Plus size={15} />
+                    Add new client & pet
+                  </button>
+                ) : (
+                  <div className="space-y-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
+                    <div className="flex items-center justify-between">
+                      <p className="text-sm font-semibold text-gray-800">New Client & Pet</p>
+                      <button
+                        onClick={() => { setShowAddClient(false); setAddClientError(null); }}
+                        className="text-xs text-gray-400 hover:text-gray-600 flex items-center gap-1"
+                      >
+                        <ChevronLeft size={13} /> Cancel
+                      </button>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-2">
+                      <input
+                        value={newClient.first_name}
+                        onChange={(e) => setNewClient({ ...newClient, first_name: e.target.value })}
+                        placeholder="First name *"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      />
+                      <input
+                        value={newClient.last_name}
+                        onChange={(e) => setNewClient({ ...newClient, last_name: e.target.value })}
+                        placeholder="Last name *"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      />
+                      <input
+                        value={newClient.phone}
+                        onChange={(e) => setNewClient({ ...newClient, phone: e.target.value })}
+                        placeholder="Phone (for SMS)"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white col-span-2"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      />
+                      <input
+                        value={newClient.email}
+                        onChange={(e) => setNewClient({ ...newClient, email: e.target.value })}
+                        placeholder="Email"
+                        type="email"
+                        className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white col-span-2"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      />
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={newPet.name}
+                        onChange={(e) => setNewPet({ ...newPet, name: e.target.value })}
+                        placeholder="Pet name"
+                        className="flex-1 border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      />
+                      <select
+                        value={newPet.species}
+                        onChange={(e) => setNewPet({ ...newPet, species: e.target.value as 'dog' | 'cat' | 'bird' | 'other' })}
+                        className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 bg-white"
+                        style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+                      >
+                        <option value="dog">Dog</option>
+                        <option value="cat">Cat</option>
+                        <option value="bird">Bird</option>
+                        <option value="other">Other</option>
+                      </select>
+                    </div>
+
+                    {addClientError && (
+                      <p className="text-xs text-red-600 bg-red-50 rounded-lg px-3 py-2">{addClientError}</p>
+                    )}
+
+                    <button
+                      onClick={handleAddClientInline}
+                      disabled={addClientLoading || !newClient.first_name.trim() || !newClient.last_name.trim()}
+                      className="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium text-white disabled:opacity-50 transition-opacity w-full justify-center"
+                      style={{ backgroundColor: '#0D7377' }}
+                    >
+                      {addClientLoading ? 'Saving…' : 'Save Client & Pet'}
+                      {!addClientLoading && <ChevronRight size={14} />}
+                    </button>
+                  </div>
+                )}
+              </div>
             </>
           )}
 
