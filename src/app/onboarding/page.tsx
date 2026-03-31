@@ -1,8 +1,8 @@
 'use client';
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Building2, User, Stethoscope, ArrowRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { trackOnboardingComplete, identify } from '@/lib/analytics/posthog';
@@ -48,6 +48,7 @@ function slugify(name: string): string {
 
 export default function OnboardingPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>('account');
   const [submitting, setSubmitting] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
@@ -123,6 +124,7 @@ export default function OnboardingPage() {
           staff_name: staffName.trim(),
           staff_role: staffRole,
           extra_staff: extraStaff,
+          referral_slug: searchParams.get('ref'),
         }),
       });
       const json = await res.json();

@@ -47,6 +47,7 @@ function scrollToCurrentHour(scrollRef: React.RefObject<HTMLDivElement | null>) 
 
 interface WeekCalendarProps {
   appointments: Appointment[];
+  practiceTimezone?: string;
   onNewAppointment?: (date: Date, hour: number) => void;
   onAppointmentClick?: (appt: Appointment) => void;
   loading?: boolean;
@@ -54,6 +55,7 @@ interface WeekCalendarProps {
 
 export default function WeekCalendar({
   appointments,
+  practiceTimezone,
   onNewAppointment,
   onAppointmentClick,
   loading = false,
@@ -186,6 +188,7 @@ export default function WeekCalendar({
               key={i}
               date={day}
               appointments={appointments}
+              practiceTimezone={practiceTimezone}
               onAppointmentClick={onAppointmentClick}
               onSlotClick={handleSlotClick}
             />

@@ -27,6 +27,7 @@ const STATUS_LABEL: Record<AppointmentStatus, string> = {
 
 interface FullCalendarViewProps {
   appointments: Appointment[];
+  practiceTimezone?: string;
   loading?: boolean;
   onNewAppointment?: (date: Date, hour: number) => void;
   onAppointmentClick?: (appt: Appointment) => void;
@@ -67,6 +68,27 @@ export default function FullCalendarView({
   onAppointmentClick,
 }: FullCalendarViewProps) {
   const calRef = useRef<FullCalendar>(null);
+  const isFirstRender = useRef(true);
+
+  // ── Dynamic scrollTime: scroll to current time only when viewing THIS week.
+  // Navigating to a past/future week should start at 7am (morning), not the
+  // current clock time, which is the most useful default for non-today weeks.
+  const getScrollTime = () => {
+    const now = new Date();
+    const todayStr = now.toDateString();
+    // We'll evaluate the visible range in the datesSet handler below.
+    return '07:00:00'; // default; will be corrected on first datesSet
+  };
+
+  const scrollTime = (() => {
+    const now = new Date();
+    const h = now.getHours();
+    if (h >= 6 && h < 20) {
+      const scrollH = Math.max(7, h - 1);
+      return `${scrollH.toString().padStart(2, '0')}:00:00`;
+    }
+    return '07:00:00';
+  })();
 
   // Convert appointments to FullCalendar events
   const events = appointments.map((appt) => {
@@ -84,6 +106,38 @@ export default function FullCalendarView({
       extendedProps: { appointment: appt },
     };
   });
+
+  // ── datesSet: fires whenever the visible date range changes (navigate, prev/next, today)
+  // Fix: if viewing a week that doesn't include today → scroll to 7am (morning hours),
+  // not the current clock time. Current time scroll only makes sense for "today" week.
+  const handleDatesSet = useCallback((arg: { start: Date; end: Date }) => {
+    if (!calRef.current) return;
+    const calApi = calRef.current.getApi();
+    const now = new Date();
+    const todayStr = now.toDateString();
+    const viewStart = arg.start;
+    const viewEnd = arg.end;
+
+    // Check if "today" falls within the currently displayed date range
+    const todayInView =
+      now >= viewStart && now < viewEnd;
+
+    if (todayInView) {
+      // Viewing this week: scroll to current time (default FullCalendar behaviour)
+      const h = now.getHours();
+      if (h >= 6 && h < 20) {
+        const scrollH = Math.max(7, h - 1);
+        calApi.scrollToTime(`${scrollH.toString().padStart(2, '0')}:00:00`);
+      }
+    } else {
+      // Viewing a past or future week: scroll to morning (7am)
+      // Only do this on user-initiated navigation (skip first render)
+      if (!isFirstRender.current) {
+        calApi.scrollToTime('07:00:00');
+      }
+    }
+    isFirstRender.current = false;
+  }, []);
 
   const handleEventClick = useCallback(
     (arg: EventClickArg) => {
@@ -157,6 +211,7 @@ export default function FullCalendarView({
           slotLabelFormat={{ hour: 'numeric', minute: '2-digit', meridiem: 'short' }}
           weekends={true}
           nowIndicator={true}
+          scrollTime={scrollTime}
           allDaySlot={false}
           expandRows={true}
           stickyHeaderDates={true}
@@ -176,6 +231,7 @@ export default function FullCalendarView({
               ? ['fc-today-custom']
               : []
           }
+          datesSet={handleDatesSet}
         />
       </div>
     </div>

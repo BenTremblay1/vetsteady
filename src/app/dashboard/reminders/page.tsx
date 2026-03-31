@@ -158,6 +158,8 @@ export default function RemindersPage() {
   const [filter, setFilter] = useState<'all' | 'pending' | 'sent' | 'delivered' | 'failed'>('all');
   const [typeFilter, setTypeFilter] = useState<string>('all');
   const [lastRefresh, setLastRefresh] = useState<Date>(new Date());
+  const [sendingIds, setSendingIds] = useState<Set<string>>(new Set());
+  const [sentToasts, setSentToasts] = useState<Record<string, 'sms' | 'email' | 'failed'>>({});
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -173,6 +175,39 @@ export default function RemindersPage() {
       setLoading(false);
     }
   }, []);
+
+  const handleSendReminder = async (appointmentId: string, channel: 'sms' | 'email') => {
+    setSendingIds((prev) => new Set(prev).add(appointmentId));
+    try {
+      const res = await fetch('/api/v1/reminders', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ appointmentId, channel }),
+      });
+      const data = await res.json();
+      if (res.ok && data.success) {
+        setSentToasts((prev) => ({ ...prev, [appointmentId]: channel }));
+        setTimeout(() => setSentToasts((prev) => {
+          const next = { ...prev };
+          delete next[appointmentId];
+          return next;
+        }), 3000);
+        await load();
+      } else {
+        setSentToasts((prev) => ({ ...prev, [appointmentId]: 'failed' }));
+        console.error('[reminders] send failed:', data.error);
+      }
+    } catch (e) {
+      setSentToasts((prev) => ({ ...prev, [appointmentId]: 'failed' }));
+      console.error('[reminders] send error:', e);
+    } finally {
+      setSendingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(appointmentId);
+        return next;
+      });
+    }
+  };
 
   useEffect(() => {
     load();
@@ -308,13 +343,55 @@ export default function RemindersPage() {
                   key={r.appointment_id}
                   className="flex items-center justify-between bg-white rounded-lg px-3 py-2 text-sm"
                 >
-                  <span className="font-medium text-gray-800">
-                    {r.appointment?.client?.first_name} {r.appointment?.client?.last_name}
-                  </span>
-                  <span className="text-gray-500">
-                    {r.appointment?.pet?.name} · {r.appointment?.starts_at ? formatDate(r.appointment.starts_at) : ''}
-                  </span>
-                  <span className="text-amber-600 font-medium text-xs">No reply</span>
+                  <div className="flex flex-col gap-0.5 min-w-0">
+                    <span className="font-medium text-gray-800 truncate">
+                      {r.appointment?.client?.first_name} {r.appointment?.client?.last_name}
+                    </span>
+                    <span className="text-xs text-gray-400 truncate">
+                      {r.appointment?.pet?.name} · {r.appointment?.starts_at ? formatDate(r.appointment.starts_at) : ''}
+                    </span>
+                  </div>
+                  {sentToasts[r.appointment_id] === 'sms' && (
+                    <span className="text-xs font-medium text-green-600 shrink-0">✓ SMS sent</span>
+                  )}
+                  {sentToasts[r.appointment_id] === 'email' && (
+                    <span className="text-xs font-medium text-green-600 shrink-0">✓ Email sent</span>
+                  )}
+                  {sentToasts[r.appointment_id] === 'failed' && (
+                    <span className="text-xs font-medium text-red-500 shrink-0">Send failed</span>
+                  )}
+                  {!sentToasts[r.appointment_id] && (
+                    <div className="flex items-center gap-1 shrink-0">
+                      {r.appointment?.client?.phone && (
+                        <button
+                          onClick={() => handleSendReminder(r.appointment_id, 'sms')}
+                          disabled={sendingIds.has(r.appointment_id)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-teal-50 text-teal-700 hover:bg-teal-100 transition-colors disabled:opacity-40"
+                        >
+                          {sendingIds.has(r.appointment_id) ? (
+                            <RefreshCw size={10} className="animate-spin" />
+                          ) : (
+                            <span>📱 SMS</span>
+                          )}
+                          {sendingIds.has(r.appointment_id) ? 'Sending…' : 'Send now'}
+                        </button>
+                      )}
+                      {r.appointment?.client?.email && (
+                        <button
+                          onClick={() => handleSendReminder(r.appointment_id, 'email')}
+                          disabled={sendingIds.has(r.appointment_id)}
+                          className="flex items-center gap-1 px-2 py-1 rounded-md text-xs font-medium bg-blue-50 text-blue-700 hover:bg-blue-100 transition-colors disabled:opacity-40"
+                        >
+                          {sendingIds.has(r.appointment_id) ? (
+                            <RefreshCw size={10} className="animate-spin" />
+                          ) : (
+                            <span>📧 Email</span>
+                          )}
+                          {sendingIds.has(r.appointment_id) ? 'Sending…' : 'Email'}
+                        </button>
+                      )}
+                    </div>
+                  )}
                 </div>
               ))}
           </div>

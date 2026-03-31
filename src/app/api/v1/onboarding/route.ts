@@ -70,7 +70,20 @@ export async function POST(request: Request) {
       );
     }
 
-    // 5. Create practice
+    // 5. Resolve referral slug → referrer practice_id (before creating the new practice)
+    let referredByPracticeId: string | null = null;
+    if (body.referral_slug && typeof body.referral_slug === 'string') {
+      const { data: refPractice } = await service
+        .from('practices')
+        .select('id')
+        .eq('slug', body.referral_slug.trim())
+        .single();
+      if (refPractice) {
+        referredByPracticeId = refPractice.id;
+      }
+    }
+
+    // 6. Create practice
     const { data: practice, error: practiceError } = await service
       .from('practices')
       .insert({
@@ -154,6 +167,27 @@ export async function POST(request: Request) {
     console.log(
       `[onboarding] New practice created: ${practice_name} (${practice.id}), staff: ${staff.id}`
     );
+
+    // 9. Record referral if this was a referred signup
+    if (referredByPracticeId) {
+      const { error: referralError } = await service
+        .from('referral_programs')
+        .insert({
+          practice_id: practice.id,
+          referred_by_practice_id: referredByPracticeId,
+          pending_months: 0,
+        })
+        .onConflict('practice_id, referred_by_practice_id')
+        .select('id')
+        .single();
+
+      if (referralError) {
+        // Non-fatal — log but don't fail onboarding
+        console.warn('[onboarding] Failed to record referral:', referralError.message);
+      } else {
+        console.log(`[onboarding] Referral recorded: ${practice.id} referred by ${referredByPracticeId}`);
+      }
+    }
 
     return NextResponse.json(
       {
