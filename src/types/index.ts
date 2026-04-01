@@ -119,6 +119,7 @@ export interface Appointment {
 }
 
 export interface CreateAppointmentInput {
+  practice_id: string;
   staff_id: string;
   client_id: string;
   pet_id: string;
