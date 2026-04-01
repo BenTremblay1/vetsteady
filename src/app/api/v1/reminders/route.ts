@@ -113,7 +113,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Appointment not found' }, { status: 404 });
     }
 
-    const client = appt.client;
+    const client = appt.client as any;
     const phone = client?.phone;
     const email = client?.email;
 
@@ -146,9 +146,9 @@ export async function POST(req: NextRequest) {
       }
     } else {
       const firstName = client?.first_name ?? 'there';
-      const petName = appt.pet?.name ?? 'your pet';
-      const apptTypeName = appt.appointment_type?.name ?? 'appointment';
-      const practiceName = appt.practice?.name ?? 'the clinic';
+      const petName = (appt.pet as any)?.name ?? 'your pet';
+      const apptTypeName = (appt.appointment_type as any)?.name ?? 'appointment';
+      const practiceName = (appt.practice as any)?.name ?? 'the clinic';
       const dateStr = format(new Date(appt.starts_at), 'EEEE, MMMM d');
       const timeStr = format(new Date(appt.starts_at), 'h:mm a');
       const subject = `Reminder: ${petName}'s appointment at ${practiceName}`;
