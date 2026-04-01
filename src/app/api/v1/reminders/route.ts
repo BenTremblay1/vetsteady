@@ -5,7 +5,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createServiceClient } from '@/lib/supabase/service';
 import { sendSmsReminder, buildReminderMessage } from '@/lib/twilio/sms';
-import { sendEmailReminder } from '@/lib/resend';
+import { sendEmailReminder } from '@/lib/resend/email';
 import { Appointment } from '@/types';
 import { format } from 'date-fns';
 

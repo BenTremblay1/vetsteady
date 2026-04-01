@@ -307,7 +307,7 @@ export default function ReferralPage() {
             {
               step: '3',
               title: 'They complete setup',
-              desc: 'They must connect Twilio, send 5+ reminders, and be active for 7 days — this prevents fraud and ensures they're a real clinic.',
+              desc: "They must connect Twilio, send 5+ reminders, and be active for 7 days — this prevents fraud and ensures they're a real clinic.",
               done: stats.totalReferred > 0,
             },
             {

@@ -545,7 +545,7 @@ function StaffSettings() {
   }
 
   async function handleDelete(s: Staff) {
-    if (!confirm(\`Remove \${s.name} from the practice?\`)) return;
+    if (!confirm(`Remove ${s.name} from the practice?`)) return;
     try {
       const res = await fetch('/api/v1/staff', {
         method: 'DELETE',
@@ -639,8 +639,8 @@ function StaffSettings() {
               <label className="flex items-center gap-2 cursor-pointer flex-shrink-0">
                 <span className="text-xs text-gray-500">Bookable</span>
                 <div onClick={() => handleToggleBookable(s)}
-                  className={\`relative w-10 h-5 rounded-full transition-colors \${s.is_bookable ? 'bg-[#0D7377]' : 'bg-gray-200'}\`}>
-                  <div className={\`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform \${s.is_bookable ? 'translate-x-5' : 'translate-x-0.5'}\`} />
+                  className={`relative w-10 h-5 rounded-full transition-colors ${s.is_bookable ? 'bg-[#0D7377]' : 'bg-gray-200'}`}>
+                  <div className={`absolute top-0.5 w-4 h-4 rounded-full bg-white shadow transition-transform ${s.is_bookable ? 'translate-x-5' : 'translate-x-0.5'}`} />
                 </div>
               </label>
               <button onClick={() => handleDelete(s)}
