@@ -177,7 +177,6 @@ export async function POST(request: Request) {
           referred_by_practice_id: referredByPracticeId,
           pending_months: 0,
         })
-        .onConflict('practice_id, referred_by_practice_id')
         .select('id')
         .single();
 
