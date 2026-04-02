@@ -131,7 +131,7 @@ export async function POST(req: NextRequest) {
     let errorMsg: string | undefined;
 
     if (channel === 'sms') {
-      const apptForMsg = appt as Appointment & {
+      const apptForMsg = appt as unknown as Appointment & {
         client?: { first_name: string };
         pet?: { name: string };
         appointment_type?: { name: string };
