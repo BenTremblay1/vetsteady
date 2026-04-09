@@ -47,8 +47,8 @@ export async function notifyWaitlistOnCancellation(params: {
   }
 
   for (const entry of entries) {
-    const client = entry.client as { id: string; first_name: string; phone: string | null } | null;
-    const pet    = entry.pet    as { name: string } | null;
+    const client = entry.client as unknown as { id: string; first_name: string; phone: string | null } | null;
+    const pet    = entry.pet    as unknown as { name: string } | null;
 
     if (!client?.phone) continue;
 

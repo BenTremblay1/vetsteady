@@ -26,7 +26,7 @@ function getHourInTimezone(utcIsoString: string, timezone: string): number {
       timeZone: timezone,
       hour: 'numeric',
       hour12: false,
-      fractionalSecondDigits: 0,
+      fractionalSecondDigits: undefined,
     });
     const parts = formatter.formatToParts(new Date(utcIsoString));
     const hour = parseInt(parts.find((p) => p.type === 'hour')?.value ?? '0', 10);

@@ -1,7 +1,6 @@
 'use client';
-'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Building2, User, Stethoscope, ArrowRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
@@ -47,6 +46,21 @@ function slugify(name: string): string {
 }
 
 export default function OnboardingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen flex items-center justify-center bg-cream-100">
+        <div className="text-center">
+          <h1 className="text-3xl font-bold" style={{ color: '#0D7377' }}>VetSteady</h1>
+          <p className="mt-2 text-sm text-gray-500">Loading...</p>
+        </div>
+      </div>
+    }>
+      <OnboardingContent />
+    </Suspense>
+  );
+}
+
+function OnboardingContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [step, setStep] = useState<Step>('account');

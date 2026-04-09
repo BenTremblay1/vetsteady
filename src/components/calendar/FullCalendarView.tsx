@@ -216,10 +216,9 @@ export default function FullCalendarView({
           expandRows={true}
           stickyHeaderDates={true}
           titleFormat={{ month: 'long', year: 'numeric' }}
-          dayHeaderFormat={{ weekday: 'long', month: 'numeric', day: 'numeric' }}
+          dayHeaderFormat={{ weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true } as any}
           slotMaxTime="20:00:00"
           eventTimeFormat={{ hour: 'numeric', minute: '2-digit', meridiem: 'short' }}
-          dayHeaderFormat={{ weekday: 'short', month: 'numeric', day: 'numeric', omitCommas: true }}
           businessHours={{
             daysOfWeek: [1, 2, 3, 4, 5],
             startTime: '08:00',

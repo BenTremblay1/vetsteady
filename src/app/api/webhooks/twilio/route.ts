@@ -395,7 +395,7 @@ async function handleSlotConfirmation({ supabase, fromNumber, state, slotChoice,
     .catch(err => console.error('[reschedule] Reminder scheduling failed:', err));
 
   // Clear session
-  await supabase.from('sms_sessions').delete().eq('phone', fromNumber).catch(() => {});
+  try { await supabase.from('sms_sessions').delete().eq('phone', fromNumber); } catch { /* ignore */ }
 
   const label = formatSlotLocal(newSlot, timezone);
   return twiml(

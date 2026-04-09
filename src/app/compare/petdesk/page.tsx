@@ -4,9 +4,9 @@ const features = [
   {
     category: 'Pricing',
     items: [
-      { feature: 'Starting price', petdesk: '$199/mo', vetsteady: '$99/mo', winner: 'vetsteady' },
+      { feature: 'Starting price', petdesk: '$199/mo', vetsteady: '$30/mo', winner: 'vetsteady' },
       { feature: 'Setup fee', petdesk: '$299 one-time', vetsteady: 'None', winner: 'vetsteady' },
-      { feature: 'Free trial', petdesk: '14 days', vetsteady: '60 days', winner: 'vetsteady' },
+      { feature: 'Free trial', petdesk: '14 days', vetsteady: '15 days (no credit card)', winner: 'vetsteady' },
       { feature: 'Annual contract required', petdesk: 'Yes (most plans)', vetsteady: 'No — month-to-month', winner: 'vetsteady' },
     ],
   },
@@ -35,7 +35,7 @@ const features = [
   {
     category: 'Transparency',
     items: [
-      { feature: 'Pricing listed publicly', petdesk: '✗ (quote required)', vetsteady: '✓ ($99/mo clearly)', winner: 'vetsteady' },
+      { feature: 'Pricing listed publicly', petdesk: '✗ (quote required)', vetsteady: '✓ ($30–$49/mo clearly)', winner: 'vetsteady' },
       { feature: 'Cancel any time', petdesk: '✗ (annual contracts)', vetsteady: '✓ no penalty', winner: 'vetsteady' },
       { feature: 'Data export', petdesk: '✓', vetsteady: '✓', winner: 'tie' },
     ],
@@ -86,12 +86,12 @@ export default function PetDeskComparisonPage() {
       <section className="bg-gray-50 border-y border-gray-100 py-10">
         <div className="max-w-4xl mx-auto px-6 grid md:grid-cols-3 gap-6 text-center">
           <div className="bg-white rounded-xl p-6 border border-gray-100">
-            <div className="text-3xl font-bold text-[#0D7377] mb-1">$1,200/yr</div>
+            <div className="text-3xl font-bold text-[#0D7377] mb-1">$1,800/yr</div>
             <div className="text-sm text-gray-500">saved vs PetDesk on comparable plan</div>
           </div>
           <div className="bg-white rounded-xl p-6 border border-gray-100">
-            <div className="text-3xl font-bold text-[#0D7377] mb-1">60 days</div>
-            <div className="text-sm text-gray-500">free trial vs PetDesk's 14</div>
+            <div className="text-3xl font-bold text-[#0D7377] mb-1">15 days</div>
+            <div className="text-sm text-gray-500">free trial — no credit card required</div>
           </div>
           <div className="bg-white rounded-xl p-6 border border-gray-100">
             <div className="text-3xl font-bold text-[#0D7377] mb-1">&lt; 10 min</div>
@@ -168,7 +168,7 @@ export default function PetDeskComparisonPage() {
                   'You want to be set up today — not in 4 weeks',
                   'You want to see the price without a sales call',
                   'You need no-show reminders without $300/month overhead',
-                  'You want to try it free for 60 days with no credit card',
+                  'You want to try it free for 15 days with no credit card',
                 ].map(item => (
                   <li key={item} className="flex items-start gap-2">
                     <span className="text-teal-400 mt-0.5">✓</span>
@@ -197,7 +197,7 @@ export default function PetDeskComparisonPage() {
       {/* CTA */}
       <section className="max-w-3xl mx-auto px-6 pb-24 text-center">
         <h2 className="text-3xl font-bold text-gray-900 mb-4">
-          Try VetSteady free for 60 days.
+          Try VetSteady free for 15 days.
         </h2>
         <p className="text-gray-500 mb-8">
           No credit card. No sales call. No 4-week onboarding. Just setup in 10 minutes 
@@ -217,7 +217,7 @@ export default function PetDeskComparisonPage() {
             Learn more about VetSteady
           </Link>
         </div>
-        <p className="text-sm text-gray-400 mt-4">60 days free · Setup in under 10 minutes · Cancel any time</p>
+        <p className="text-sm text-gray-400 mt-4">15 days free · Setup in under 10 minutes · Cancel any time</p>
       </section>
 
       {/* Footer */}

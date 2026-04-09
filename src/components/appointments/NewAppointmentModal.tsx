@@ -87,7 +87,7 @@ export default function NewAppointmentModal({
   const [addClientLoading, setAddClientLoading] = useState(false);
   const [addClientError, setAddClientError]     = useState<string | null>(null);
   const [newClient, setNewClient] = useState({ first_name: '', last_name: '', phone: '', email: '' });
-  const [newPet, setNewPet]       = useState({ name: '', species: 'dog' as const, breed: '' });
+  const [newPet, setNewPet]       = useState<{ name: string; species: Pet['species']; breed: string }>({ name: '', species: 'dog', breed: '' });
 
   // Derived
   const selectedClient = clients.find((c) => c.id === selectedClientId);
@@ -244,7 +244,7 @@ export default function NewAppointmentModal({
     setSubmitting(true);
     setError(null);
     try {
-      const body: CreateAppointmentInput = {
+      const body: Omit<CreateAppointmentInput, 'practice_id'> = {
         staff_id: selectedStaffId,
         client_id: selectedClientId,
         pet_id: selectedPetId,
@@ -496,7 +496,7 @@ export default function NewAppointmentModal({
                       />
                       <select
                         value={newPet.species}
-                        onChange={(e) => setNewPet({ ...newPet, species: e.target.value as 'dog' | 'cat' | 'bird' | 'other' })}
+                        onChange={(e) => setNewPet({ ...newPet, species: e.target.value as Pet['species'] })}
                         className="border border-gray-200 rounded-lg px-2 py-2 text-sm focus:outline-none focus:ring-2 bg-white"
                         style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
                       >

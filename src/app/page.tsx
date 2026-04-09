@@ -58,7 +58,7 @@ export default function LandingPage() {
             See how it works
           </a>
         </div>
-        <p className="text-sm text-gray-400 mt-4">Free for 60 days · Setup in under 10 minutes</p>
+        <p className="text-sm text-gray-400 mt-4">15-day free trial · No credit card · Setup in under 10 minutes</p>
       </section>
 
       {/* Social proof numbers */}
@@ -146,11 +146,11 @@ export default function LandingPage() {
           Less than the revenue from one recovered no-show per month. Seriously.
         </p>
         <div className="grid md:grid-cols-2 gap-6 max-w-2xl mx-auto">
-          {/* Free */}
+          {/* Starter */}
           <div className="border border-gray-200 rounded-2xl p-8 text-left">
             <div className="text-sm font-semibold text-gray-500 uppercase tracking-wide mb-2">Starter</div>
-            <div className="text-4xl font-bold text-gray-900 mb-1">$0</div>
-            <div className="text-sm text-gray-400 mb-6">Up to 50 appointments/month</div>
+            <div className="text-4xl font-bold text-gray-900 mb-1">$30<span className="text-xl font-normal text-gray-400">/mo</span></div>
+            <div className="text-sm text-gray-400 mb-6">Up to 100 appointments/month · 1 vet</div>
             <ul className="space-y-3 text-sm text-gray-600 mb-8">
               {['SMS + email reminders', 'Online booking portal', 'Client & pet profiles', 'Confirmation tracking', '1 vet calendar'].map(f => (
                 <li key={f} className="flex items-center gap-2">
@@ -159,14 +159,14 @@ export default function LandingPage() {
               ))}
             </ul>
             <Link href="/onboarding" className="block text-center border border-gray-200 text-gray-700 py-3 rounded-lg text-sm font-medium hover:bg-gray-50 transition-colors">
-              Start free
+              Start 15-day free trial
             </Link>
           </div>
           {/* Pro */}
           <div className="bg-[#0D7377] rounded-2xl p-8 text-left text-white relative overflow-hidden">
             <div className="absolute top-4 right-4 bg-[#F4A435] text-white text-xs font-bold px-3 py-1 rounded-full">Most popular</div>
             <div className="text-sm font-semibold text-teal-200 uppercase tracking-wide mb-2">Pro</div>
-            <div className="text-4xl font-bold mb-1">$99<span className="text-xl font-normal text-teal-200">/mo</span></div>
+            <div className="text-4xl font-bold mb-1">$49<span className="text-xl font-normal text-teal-200">/mo</span></div>
             <div className="text-sm text-teal-200 mb-6">Unlimited appointments · 1–3 vets</div>
             <ul className="space-y-3 text-sm text-teal-100 mb-8">
               {[
@@ -184,7 +184,7 @@ export default function LandingPage() {
               ))}
             </ul>
             <Link href="/onboarding" className="block text-center bg-white text-[#0D7377] py-3 rounded-lg text-sm font-semibold hover:bg-teal-50 transition-colors">
-              Start 60-day free trial
+              Start 15-day free trial
             </Link>
           </div>
         </div>
@@ -243,7 +243,7 @@ export default function LandingPage() {
         >
           Start your free trial
         </Link>
-        <p className="text-sm text-gray-400 mt-4">No credit card · 60 days free · Cancel any time</p>
+        <p className="text-sm text-gray-400 mt-4">No credit card · 15-day free trial · Cancel any time</p>
       </section>
 
       {/* Footer */}
