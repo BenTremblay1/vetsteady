@@ -20,12 +20,25 @@ export async function middleware(request: NextRequest) {
     }
   );
 
-  // Public routes — always accessible
+  // Public routes — always accessible without auth
   const publicRoutes = ['/', '/login', '/onboarding', '/confirm', '/auth', '/api/stripe/webhooks'];
   const { pathname } = request.nextUrl;
   const isPublicRoute = publicRoutes.some((r) => pathname === r || pathname.startsWith(r));
 
-  // If already on a public route, skip auth check to avoid unnecessary DB calls
+  // If on /login, check auth first — redirect authenticated users to /dashboard
+  if (pathname === '/login') {
+    try {
+      const { data } = await supabase.auth.getUser();
+      if (data.user) {
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+    } catch {
+      // Supabase unreachable — let them stay on login
+    }
+    return supabaseResponse;
+  }
+
+  // For other public routes, skip auth check to avoid unnecessary DB calls
   if (isPublicRoute) {
     return supabaseResponse;
   }
@@ -42,10 +55,6 @@ export async function middleware(request: NextRequest) {
 
   if (!user) {
     return NextResponse.redirect(new URL('/login', request.url));
-  }
-
-  if (pathname === '/login') {
-    return NextResponse.redirect(new URL('/dashboard', request.url));
   }
 
   return supabaseResponse;

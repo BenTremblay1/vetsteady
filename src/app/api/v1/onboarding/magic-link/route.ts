@@ -18,7 +18,7 @@ export async function POST(request: Request) {
 
     // Determine the base URL for the redirect
     const origin =
-      process.env.NEXT_PUBLIC_SITE_URL ??
+      process.env.NEXT_PUBLIC_APP_URL ??
       request.headers.get('origin') ??
       'http://localhost:3000';
 

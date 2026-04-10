@@ -5,6 +5,8 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Building2, User, Stethoscope, ArrowRight, Plus } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
 import { trackOnboardingComplete, identify } from '@/lib/analytics/posthog';
+import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
+import { createClient } from '@/lib/supabase/client';
 
 // ─── Onboarding Page ──────────────────────────────────────────────────────────
 // New practices go through a 3-step wizard:
@@ -99,6 +101,20 @@ function OnboardingContent() {
   }
 
   const stepIndex = STEPS.findIndex((s) => s.id === step);
+
+  // Auto-detect if user is already authenticated (e.g., came back from Google OAuth)
+  useEffect(() => {
+    async function checkSession() {
+      const supabase = createClient();
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        // User is already authenticated — skip to practice details
+        if (user.email) setEmail(user.email);
+        setStep('practice');
+      }
+    }
+    checkSession();
+  }, []);
 
   // ─── Step 1: Send magic link ──────────────────────────────────────────────
   async function handleSendMagicLink() {
@@ -219,12 +235,25 @@ function OnboardingContent() {
                 <div>
                   <h2 className="text-xl font-semibold text-gray-900">Create your account</h2>
                   <p className="mt-1 text-sm text-gray-500">
-                    We'll send a magic link to your email — no password needed.
+                    Get started in seconds — no password needed.
                   </p>
                 </div>
 
                 {!magicLinkSent ? (
                   <>
+                    {/* Google OAuth — primary CTA */}
+                    <GoogleAuthButton
+                      redirectTo="/onboarding"
+                      label="Continue with Google"
+                    />
+
+                    <div className="flex items-center gap-3">
+                      <div className="flex-1 border-t border-gray-200" />
+                      <span className="text-xs text-gray-400">or use email</span>
+                      <div className="flex-1 border-t border-gray-200" />
+                    </div>
+
+                    {/* Email magic link — secondary option */}
                     <div>
                       <label className="block text-sm font-medium text-gray-700 mb-1.5">
                         Work email address
@@ -237,7 +266,6 @@ function OnboardingContent() {
                         placeholder="you@happypaws.com"
                         className="w-full border border-gray-200 rounded-xl px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:border-transparent"
                         style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
-                        autoFocus
                       />
                     </div>
 

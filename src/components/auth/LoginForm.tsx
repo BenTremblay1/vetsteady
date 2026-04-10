@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import GoogleAuthButton from './GoogleAuthButton';
 
 type Mode = 'magic-link' | 'password';
 
@@ -57,6 +58,15 @@ export default function LoginForm() {
   }
 
   return (
+    <div className="space-y-4">
+      <GoogleAuthButton redirectTo="/dashboard" label="Sign in with Google" />
+
+      <div className="flex items-center gap-3">
+        <div className="flex-1 border-t border-gray-200" />
+        <span className="text-xs text-gray-400">or</span>
+        <div className="flex-1 border-t border-gray-200" />
+      </div>
+
     <form onSubmit={mode === 'password' ? handlePasswordSubmit : handleMagicLinkSubmit} className="space-y-4">
       {mode === 'password' ? (
         <>
@@ -128,5 +138,6 @@ export default function LoginForm() {
         </button>
       </div>
     </form>
+    </div>
   );
 }
