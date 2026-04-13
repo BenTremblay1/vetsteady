@@ -4,19 +4,25 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Calendar, Users, Settings, LogOut, BarChart2, MessageSquare, TrendingUp, Gift, CreditCard } from 'lucide-react';
 
-const navItems = [
+const publicNavItems = [
   { href: '/dashboard',              label: 'Calendar',  icon: Calendar },
   { href: '/dashboard/clients',      label: 'Clients',   icon: Users },
   { href: '/dashboard/reminders',    label: 'Reminders', icon: MessageSquare },
   { href: '/dashboard/reports',      label: 'Reports',   icon: BarChart2 },
   { href: '/dashboard/billing',      label: 'Billing',   icon: CreditCard },
-  { href: '/dashboard/launch',        label: 'Launch',    icon: TrendingUp },
-  { href: '/dashboard/referral',      label: 'Referrals',  icon: Gift },
+  { href: '/dashboard/referral',     label: 'Referrals', icon: Gift },
   { href: '/dashboard/settings',     label: 'Settings',  icon: Settings },
 ];
 
-export default function Sidebar() {
+const adminNavItems = [
+  { href: '/dashboard/launch', label: 'Launch', icon: TrendingUp },
+];
+
+export default function Sidebar({ isAdmin = false }: { isAdmin?: boolean }) {
   const pathname = usePathname();
+  const navItems = isAdmin
+    ? [...publicNavItems.slice(0, 5), ...adminNavItems, ...publicNavItems.slice(5)]
+    : publicNavItems;
 
   return (
     <aside className="w-56 bg-white border-r border-gray-200 flex flex-col">

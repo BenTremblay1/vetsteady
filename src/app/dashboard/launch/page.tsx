@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
+import { useRouter } from 'next/navigation';
+import { createClient } from '@/lib/supabase/client';
 import {
   DollarSign,
   Users,
@@ -300,11 +302,26 @@ function TargetsTable({ data }: { data: LaunchData }) {
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 
+const ADMIN_EMAILS = (process.env.NEXT_PUBLIC_ADMIN_EMAIL ?? '')
+  .split(',').map((e) => e.trim().toLowerCase()).filter(Boolean);
+
 export default function LaunchDashboardPage() {
+  const router = useRouter();
   const [data, setData] = useState<LaunchData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
+
+  // Guard: redirect non-admins away immediately
+  useEffect(() => {
+    if (ADMIN_EMAILS.length === 0) return; // no admin configured — allow through in dev
+    const supabase = createClient();
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      if (!user || !ADMIN_EMAILS.includes((user.email ?? '').toLowerCase())) {
+        router.replace('/dashboard');
+      }
+    });
+  }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
   const load = useCallback(async () => {
     setLoading(true);
