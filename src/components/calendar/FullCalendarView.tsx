@@ -6,7 +6,10 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Appointment, AppointmentStatus } from '@/types';
-import type { EventClickArg, DateSelectArg, EventContentArg, DateClickArg } from '@fullcalendar/core';
+import type { EventClickArg, DateSelectArg, EventContentArg } from '@fullcalendar/core';
+
+// DateClickArg is not exported by @fullcalendar/core v6 — define the shape we need
+interface DateClickArg { date: Date; allDay: boolean; jsEvent: MouseEvent }
 
 // Status → colour mapping (matches VetSteady brand)
 const STATUS_COLORS: Record<AppointmentStatus, { bg: string; border: string; text: string }> = {
