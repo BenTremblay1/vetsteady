@@ -6,7 +6,7 @@ import timeGridPlugin from '@fullcalendar/timegrid';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import { Appointment, AppointmentStatus } from '@/types';
-import type { EventClickArg, DateSelectArg, EventContentArg } from '@fullcalendar/core';
+import type { EventClickArg, DateSelectArg, EventContentArg, DateClickArg } from '@fullcalendar/core';
 
 // Status → colour mapping (matches VetSteady brand)
 const STATUS_COLORS: Record<AppointmentStatus, { bg: string; border: string; text: string }> = {
@@ -158,6 +158,15 @@ export default function FullCalendarView({
     [onNewAppointment]
   );
 
+  const handleDateClick = useCallback(
+    (arg: DateClickArg) => {
+      const date = arg.date;
+      const hour = date.getHours();
+      onNewAppointment?.(date, hour);
+    },
+    [onNewAppointment]
+  );
+
   return (
     <div className="relative flex flex-col h-full bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
       {loading && (
@@ -195,6 +204,7 @@ export default function FullCalendarView({
           }}
           buttonText={{
             today: 'Today',
+            month: 'Month',
             week: 'Week',
             day: 'Day',
           }}
@@ -205,6 +215,10 @@ export default function FullCalendarView({
           selectable={true}
           selectMirror={true}
           select={handleDateSelect}
+          dateClick={handleDateClick}
+          editable={true}
+          eventDurationEditable={true}
+          eventStartEditable={true}
           slotMinTime="07:00:00"
           slotDuration="00:30:00"
           slotLabelInterval="01:00:00"

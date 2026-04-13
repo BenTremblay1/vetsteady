@@ -1,8 +1,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Save, Bell, Clock, Tag, Plus, Trash2, Plug, Stethoscope, UserPlus } from 'lucide-react';
-import { AppointmentType, PracticeSettings, Staff } from '@/types';
+import { Save, Bell, Clock, Tag, Plus, Trash2, Plug, Stethoscope, UserPlus, Link, Copy, Check } from 'lucide-react';
+import { AppointmentType, PracticeSettings, Staff, StaffInvite } from '@/types';
 import dynamic from 'next/dynamic';
 
 // ─── Settings Page ───────────────────────────────────────────────────────────
@@ -490,6 +490,51 @@ function StaffSettings() {
   const [newName, setNewName] = useState('');
   const [newRole, setNewRole] = useState<Staff['role']>('vet');
 
+  // Invites
+  const [invites, setInvites] = useState<StaffInvite[]>([]);
+  const [inviteRole, setInviteRole] = useState<'vet' | 'receptionist' | 'admin'>('vet');
+  const [generatingInvite, setGeneratingInvite] = useState(false);
+  const [newInviteUrl, setNewInviteUrl] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
+
+  const loadInvites = async () => {
+    try {
+      const res = await fetch('/api/v1/staff/invite');
+      if (res.ok) {
+        const json = await res.json();
+        setInvites(json.data ?? []);
+      }
+    } catch (e) {
+      console.error('[staff invites] load failed', e);
+    }
+  };
+
+  const handleGenerateInvite = async () => {
+    setGeneratingInvite(true);
+    setNewInviteUrl(null);
+    try {
+      const res = await fetch('/api/v1/staff/invite', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ role: inviteRole }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to generate invite');
+      setNewInviteUrl(json.data.invite_url);
+      await loadInvites();
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setGeneratingInvite(false);
+    }
+  };
+
+  const handleCopy = (url: string, token: string) => {
+    navigator.clipboard.writeText(url);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
+  };
+
   const loadStaff = async () => {
     setLoading(true);
     try {
@@ -503,7 +548,7 @@ function StaffSettings() {
     }
   };
 
-  useEffect(() => { loadStaff(); }, []);
+  useEffect(() => { loadStaff(); loadInvites(); }, []);
 
   async function handleAdd(e: React.FormEvent) {
     e.preventDefault();
@@ -650,6 +695,77 @@ function StaffSettings() {
           ))}
         </div>
       )}
+
+      {/* ── Team Invites ── */}
+      <div className="border-t border-gray-100 px-6 py-5 space-y-4">
+        <div>
+          <h3 className="text-sm font-semibold text-gray-900 flex items-center gap-2">
+            <UserPlus size={14} className="text-[#0D7377]" />
+            Invite Team Member
+          </h3>
+          <p className="text-xs text-gray-500 mt-0.5">Generate a one-time link to invite staff to your practice.</p>
+        </div>
+
+        <div className="flex items-center gap-3 flex-wrap">
+          <div>
+            <label className="block text-xs font-medium text-gray-600 mb-1">Role</label>
+            <select
+              value={inviteRole}
+              onChange={(e) => setInviteRole(e.target.value as typeof inviteRole)}
+              className="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 bg-white"
+              style={{ '--tw-ring-color': '#0D7377' } as React.CSSProperties}
+            >
+              <option value="vet">Veterinarian</option>
+              <option value="receptionist">Receptionist</option>
+              <option value="admin">Admin</option>
+            </select>
+          </div>
+          <button
+            onClick={handleGenerateInvite}
+            disabled={generatingInvite}
+            className="flex items-center gap-1.5 px-4 py-2 rounded-lg text-sm font-medium text-white mt-4 transition-opacity disabled:opacity-60"
+            style={{ backgroundColor: '#0D7377' }}
+          >
+            <Link size={13} />
+            {generatingInvite ? 'Generating…' : 'Generate Invite Link'}
+          </button>
+        </div>
+
+        {newInviteUrl && (
+          <div className="flex items-center gap-2 bg-teal-50 border border-teal-200 rounded-lg px-3 py-2">
+            <span className="flex-1 text-xs font-mono text-teal-800 truncate">{newInviteUrl}</span>
+            <button
+              onClick={() => handleCopy(newInviteUrl, 'new')}
+              className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-teal-700 hover:text-teal-900"
+            >
+              {copiedToken === 'new' ? <Check size={13} /> : <Copy size={13} />}
+              {copiedToken === 'new' ? 'Copied!' : 'Copy'}
+            </button>
+          </div>
+        )}
+
+        {invites.filter((inv) => !inv.used).length > 0 && (
+          <div className="space-y-2">
+            <p className="text-xs font-semibold text-gray-500 uppercase tracking-wide">Pending Invites</p>
+            {invites.filter((inv) => !inv.used).map((inv) => {
+              const invUrl = `${typeof window !== 'undefined' ? window.location.origin : ''}/invite/${inv.token}`;
+              return (
+                <div key={inv.token} className="flex items-center gap-2 bg-gray-50 border border-gray-200 rounded-lg px-3 py-2">
+                  <span className="text-xs text-gray-500 capitalize">{ROLE_LABELS[inv.role] ?? inv.role}</span>
+                  <span className="flex-1 text-xs font-mono text-gray-400 truncate">{invUrl}</span>
+                  <button
+                    onClick={() => handleCopy(invUrl, inv.token)}
+                    className="flex-shrink-0 flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-gray-700"
+                  >
+                    {copiedToken === inv.token ? <Check size={13} /> : <Copy size={13} />}
+                    {copiedToken === inv.token ? 'Copied!' : 'Copy'}
+                  </button>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

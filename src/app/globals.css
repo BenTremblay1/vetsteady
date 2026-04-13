@@ -69,6 +69,11 @@
   @apply cursor-pointer;
 }
 
+.fc-timegrid-slot:hover {
+  background-color: rgba(13, 115, 119, 0.04) !important;
+  cursor: pointer;
+}
+
 .fc-toolbar-title {
   @apply text-lg font-semibold;
 }

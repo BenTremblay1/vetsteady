@@ -21,7 +21,7 @@ export async function middleware(request: NextRequest) {
   );
 
   // Public routes — always accessible without auth
-  const publicRoutes = ['/', '/login', '/onboarding', '/confirm', '/auth', '/api/stripe/webhooks'];
+  const publicRoutes = ['/', '/login', '/onboarding', '/confirm', '/auth', '/api/stripe/webhooks', '/invite'];
   const { pathname } = request.nextUrl;
   const isPublicRoute = publicRoutes.some((r) => pathname === r || pathname.startsWith(r));
 

@@ -17,6 +17,13 @@ export interface Practice {
   updated_at: string;
 }
 
+export interface StaffInvite {
+  token: string;
+  role: string;
+  created_at: string;
+  used: boolean;
+}
+
 export interface PracticeSettings {
   reminder_timing?: {
     booking_confirm: boolean;
@@ -28,6 +35,7 @@ export interface PracticeSettings {
   deposit_required?: boolean;
   deposit_amount_cents?: number;
   booking_advance_days?: number; // how far in advance clients can book
+  invites?: StaffInvite[];
 }
 
 export interface Staff {

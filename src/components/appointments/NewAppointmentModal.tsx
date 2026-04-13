@@ -123,6 +123,17 @@ export default function NewAppointmentModal({
     }
   }, [open]);
 
+  // Auto-advance past datetime step when date + hour are pre-filled from calendar click
+  useEffect(() => {
+    if (open && defaultDate && defaultHour !== undefined && step === 'datetime' && startsAt) {
+      // Small delay to let the user see the pre-filled values before advancing
+      const timer = setTimeout(() => {
+        setStep('client');
+      }, 300);
+      return () => clearTimeout(timer);
+    }
+  }, [open, defaultDate, defaultHour, startsAt]); // eslint-disable-line react-hooks/exhaustive-deps
+
   // When client changes, load their pets and clear pet selection
   useEffect(() => {
     setSelectedPetId('');
@@ -167,9 +178,9 @@ export default function NewAppointmentModal({
 
   function canAdvance(): boolean {
     switch (step) {
-      case 'datetime': return !!startsAt && !!selectedStaffId;
+      case 'datetime': return !!startsAt;
       case 'client':   return !!selectedClientId && !!selectedPetId;
-      case 'details':  return !!selectedTypeId;
+      case 'details':  return !!selectedTypeId && !!selectedStaffId;
       case 'confirm':  return true;
     }
   }
@@ -335,25 +346,6 @@ export default function NewAppointmentModal({
                   className="input w-full"
                 />
               </FormField>
-
-              <FormField label="Veterinarian / Staff" icon={<Stethoscope size={15} />}>
-                <select
-                  value={selectedStaffId}
-                  onChange={(e) => setSelectedStaffId(e.target.value)}
-                  className="input w-full"
-                >
-                  <option value="">Select staff member…</option>
-                  {staff.filter((s) => s.is_bookable).map((s) => (
-                    <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
-                  ))}
-                </select>
-              </FormField>
-
-              {staff.length === 0 && (
-                <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-3">
-                  No staff found. Make sure your practice account is set up.
-                </p>
-              )}
             </>
           )}
 
@@ -553,6 +545,25 @@ export default function NewAppointmentModal({
                   ))}
                 </div>
               </FormField>
+
+              <FormField label="Veterinarian / Staff" icon={<Stethoscope size={15} />}>
+                <select
+                  value={selectedStaffId}
+                  onChange={(e) => setSelectedStaffId(e.target.value)}
+                  className="input w-full"
+                >
+                  <option value="">Select staff member…</option>
+                  {staff.filter((s) => s.is_bookable).map((s) => (
+                    <option key={s.id} value={s.id}>{s.name} ({s.role})</option>
+                  ))}
+                </select>
+              </FormField>
+
+              {staff.length === 0 && (
+                <p className="text-xs text-amber-600 bg-amber-50 rounded-lg p-3">
+                  No staff found. Make sure your practice account is set up.
+                </p>
+              )}
 
               <FormField label="Notes (optional)">
                 <textarea

@@ -88,7 +88,7 @@ export default function DashboardPage() {
       </div>
 
       {/* ── Calendar ── */}
-      <div className="flex-1 min-h-0">
+      <div className="h-[calc(100vh-280px)] min-h-[560px]">
         <FullCalendarView
           appointments={appointments}
           loading={loading}
