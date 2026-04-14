@@ -21,7 +21,19 @@ export async function middleware(request: NextRequest) {
   );
 
   // Public routes — always accessible without auth
-  const publicRoutes = ['/', '/login', '/onboarding', '/confirm', '/auth', '/api/stripe/webhooks', '/invite'];
+  const publicRoutes = [
+    '/',
+    '/login',
+    '/onboarding',
+    '/confirm',       // appointment confirm/cancel links (sent via SMS)
+    '/auth',          // Supabase OAuth callback
+    '/api/stripe/webhooks',
+    '/invite',        // staff invite accept page
+    '/book',          // public client-facing booking page
+    '/legal',         // terms / privacy
+    '/ref',           // referral landing pages
+    '/compare',       // comparison pages (SEO)
+  ];
   const { pathname } = request.nextUrl;
   const isPublicRoute = publicRoutes.some((r) => pathname === r || pathname.startsWith(r));
 
