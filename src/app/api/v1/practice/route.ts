@@ -60,7 +60,7 @@ export async function PATCH(req: NextRequest) {
     }
 
     const body = await req.json();
-    const { name, phone, email, timezone, allow_online_booking, booking_advance_days } = body;
+    const { name, phone, email, timezone, allow_online_booking, booking_advance_days, settings } = body;
 
     const updates: Record<string, unknown> = {};
     if (name !== undefined) updates.name = name;
@@ -70,11 +70,21 @@ export async function PATCH(req: NextRequest) {
     if (allow_online_booking !== undefined) updates.allow_online_booking = allow_online_booking;
     if (booking_advance_days !== undefined) updates.booking_advance_days = booking_advance_days;
 
+    // Merge settings object rather than replace (preserve unrelated keys)
+    if (settings !== undefined) {
+      const { data: current } = await supabase
+        .from('practices')
+        .select('settings')
+        .eq('id', staff.practice_id)
+        .single();
+      updates.settings = { ...(current?.settings ?? {}), ...settings };
+    }
+
     const { data: practice, error } = await supabase
       .from('practices')
       .update(updates)
       .eq('id', staff.practice_id)
-      .select('id, name, slug, phone, email, timezone, allow_online_booking, booking_advance_days')
+      .select('id, name, slug, phone, email, timezone, allow_online_booking, booking_advance_days, settings')
       .single();
 
     if (error) {

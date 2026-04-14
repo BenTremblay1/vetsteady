@@ -66,6 +66,7 @@ export default function SettingsPage() {
 function ReminderSettings() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [settings, setSettings] = useState<PracticeSettings['reminder_timing']>({
     booking_confirm: true,
     two_week: true,
@@ -74,13 +75,35 @@ function ReminderSettings() {
     same_day: false,
   });
 
+  // Load current reminder config from practice settings
+  useEffect(() => {
+    fetch('/api/v1/practice')
+      .then((r) => r.json())
+      .then((json) => {
+        const timing = json.data?.settings?.reminder_timing;
+        if (timing) setSettings((prev) => ({ ...prev, ...timing }));
+      })
+      .catch(() => {});
+  }, []);
+
   const handleSave = async () => {
     setSaving(true);
-    // In production: PATCH /api/v1/practice { settings: { reminder_timing: settings } }
-    await new Promise((r) => setTimeout(r, 600)); // simulate save
-    setSaved(true);
-    setSaving(false);
-    setTimeout(() => setSaved(false), 2500);
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/practice', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ settings: { reminder_timing: settings } }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to save');
+      setSaved(true);
+      setTimeout(() => setSaved(false), 2500);
+    } catch (err: any) {
+      setError(err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const reminders: Array<{ key: keyof NonNullable<PracticeSettings['reminder_timing']>; label: string; desc: string }> = [
@@ -134,6 +157,7 @@ function ReminderSettings() {
           <Save size={14} />
           {saved ? 'Saved ✓' : saving ? 'Saving…' : 'Save Settings'}
         </button>
+        {error && <p className="text-xs text-red-500 mt-2">{error}</p>}
       </div>
     </div>
   );
