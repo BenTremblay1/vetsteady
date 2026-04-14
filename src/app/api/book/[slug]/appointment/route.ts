@@ -5,6 +5,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { createServiceClient } from '@/lib/supabase/service';
+import { scheduleRemindersForAppointment } from '@/lib/queue/reminder-jobs';
 import crypto from 'crypto';
 
 export interface PublicBookingInput {
@@ -187,15 +188,15 @@ export async function POST(
       throw new Error(`Failed to create appointment: ${apptErr?.message}`);
     }
 
-    // ── 7. Queue booking confirmation reminder ────────────────────────
-    // Insert a pending reminder — the cron job will pick it up and send SMS/email
-    await supabase.from('reminders').insert({
-      appointment_id: appointment.id,
-      practice_id: practice.id,
-      channel: body.preferred_contact === 'email' ? 'email' : 'sms',
-      reminder_type: 'booking_confirm',
-      status: 'pending',
-    });
+    // ── 7. Queue booking confirmation + scheduled reminders via pg-boss ──
+    // scheduleRemindersForAppointment enqueues booking_confirm (immediate)
+    // plus 2-week / 4-day / 2-day reminders. The cron picks them up every 5 min.
+    await scheduleRemindersForAppointment(
+      appointment.id,
+      practice.id,
+      startsAt.toISOString(),
+      practice.settings?.reminder_timing
+    );
 
     return NextResponse.json({
       success: true,

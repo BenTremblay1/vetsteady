@@ -16,7 +16,7 @@ export async function GET() {
     const { data: staff } = await supabase
       .from('staff')
       .select('practice_id')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single();
 
     if (!staff?.practice_id) {
@@ -25,7 +25,7 @@ export async function GET() {
 
     const { data: practice, error } = await supabase
       .from('practices')
-      .select('id, name, slug, phone, email, timezone, allow_online_booking, booking_advance_days')
+      .select('id, name, slug, phone, email, timezone, allow_online_booking, booking_advance_days, subscription_status, stripe_customer_id, settings')
       .eq('id', staff.practice_id)
       .single();
 
@@ -52,7 +52,7 @@ export async function PATCH(req: NextRequest) {
     const { data: staff } = await supabase
       .from('staff')
       .select('practice_id')
-      .eq('user_id', user.id)
+      .eq('auth_user_id', user.id)
       .single();
 
     if (!staff?.practice_id) {
