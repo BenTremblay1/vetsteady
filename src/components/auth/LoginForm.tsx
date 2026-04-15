@@ -1,7 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { friendlyAuthError } from '@/lib/utils/auth-errors';
 import GoogleAuthButton from './GoogleAuthButton';
 
 type Mode = 'magic-link' | 'password';
@@ -12,8 +13,16 @@ export default function LoginForm() {
   const [mode, setMode] = useState<Mode>('password');
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState('')
   const supabase = createClient();
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
 
   async function handlePasswordSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -24,7 +33,7 @@ export default function LoginForm() {
       password,
     });
     if (error) {
-      setError(error.message);
+      setError(friendlyAuthError(error.message));
     } else {
       window.location.href = '/dashboard';
     }
@@ -40,19 +49,52 @@ export default function LoginForm() {
       options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
     });
     if (error) {
-      setError(error.message);
+      setError(friendlyAuthError(error.message));
     } else {
       setSent(true);
+      setResendCooldown(60);
     }
     setLoading(false);
   }
 
+  async function handleResendMagicLink() {
+    if (resendCooldown > 0) return;
+    setError('');
+    const { error } = await supabase.auth.signInWithOtp({
+      email: email.trim(),
+      options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=/dashboard` },
+    });
+    if (error) {
+      setError(friendlyAuthError(error.message));
+    } else {
+      setResendCooldown(60);
+    }
+  }
+
   if (sent) {
     return (
-      <div className="text-center py-4">
+      <div className="text-center py-4 space-y-4">
         <div className="text-4xl mb-3">📬</div>
         <h3 className="text-lg font-semibold text-gray-900">Check your email</h3>
-        <p className="mt-2 text-sm text-gray-600">We sent a magic link to <strong>{email}</strong>. Click it to sign in.</p>
+        <p className="text-sm text-gray-600">We sent a magic link to <strong>{email}</strong>. Click it to sign in.</p>
+        <p className="text-xs text-gray-400">
+          Didn't get it?{' '}
+          {resendCooldown > 0 ? (
+            <span>Resend in {resendCooldown}s</span>
+          ) : (
+            <button onClick={handleResendMagicLink} className="underline hover:text-teal-700">
+              Resend magic link
+            </button>
+          )}
+          {' · '}
+          <button
+            onClick={() => { setSent(false); setError(''); setResendCooldown(0); }}
+            className="underline hover:text-teal-700"
+          >
+            Use a different email
+          </button>
+        </p>
+        {error && <p className="text-sm text-red-600 bg-red-50 rounded-lg px-3 py-2">{error}</p>}
       </div>
     );
   }

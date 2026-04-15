@@ -20,6 +20,16 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // ── Handle expired/invalid magic links ──────────────────────────────────────
+  // Supabase redirects to Site URL with ?error=access_denied&error_code=otp_expired
+  // when a magic link expires. Catch this and redirect to /login with a friendly message.
+  const errorCode = request.nextUrl.searchParams.get('error_code');
+  if (errorCode === 'otp_expired' || request.nextUrl.searchParams.get('error') === 'access_denied') {
+    const loginUrl = new URL('/login', request.url);
+    loginUrl.searchParams.set('error', 'link_expired');
+    return NextResponse.redirect(loginUrl);
+  }
+
   // Public routes — always accessible without auth
   const publicRoutes = [
     '/',

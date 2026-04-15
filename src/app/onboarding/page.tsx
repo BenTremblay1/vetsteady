@@ -4,6 +4,7 @@ import { useState, useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { Check, Building2, User, Stethoscope, ArrowRight } from 'lucide-react';
 import { cn } from '@/lib/utils/cn';
+import { friendlyAuthError } from '@/lib/utils/auth-errors';
 import { trackOnboardingComplete, identify } from '@/lib/analytics/posthog';
 import GoogleAuthButton from '@/components/auth/GoogleAuthButton';
 import { createClient } from '@/lib/supabase/client';
@@ -67,6 +68,7 @@ function OnboardingContent() {
   const [step, setStep] = useState<Step>('account');
   const [submitting, setSubmitting] = useState(false);
   const [magicLinkSent, setMagicLinkSent] = useState(false);
+  const [resendCooldown, setResendCooldown] = useState(0);
   const [error, setError] = useState<string | null>(null);
 
   // Step 1 — account
@@ -82,6 +84,30 @@ function OnboardingContent() {
   const [staffRole, setStaffRole] = useState<'admin' | 'vet' | 'receptionist'>('admin');
 
   const stepIndex = STEPS.findIndex((s) => s.id === step);
+
+  // Resend cooldown timer
+  useEffect(() => {
+    if (resendCooldown <= 0) return;
+    const timer = setTimeout(() => setResendCooldown((c) => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCooldown]);
+
+  async function handleResendMagicLink() {
+    if (resendCooldown > 0 || !email.trim()) return;
+    setError(null);
+    try {
+      const res = await fetch('/api/v1/onboarding/magic-link', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email: email.trim() }),
+      });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error ?? 'Failed to resend');
+      setResendCooldown(60);
+    } catch (err: any) {
+      setError(friendlyAuthError(err.message));
+    }
+  }
 
   // Auto-detect if user is already authenticated (e.g., came back from Google OAuth)
   useEffect(() => {
@@ -111,8 +137,9 @@ function OnboardingContent() {
       const json = await res.json();
       if (!res.ok) throw new Error(json.error ?? 'Failed to send magic link');
       setMagicLinkSent(true);
+      setResendCooldown(60);
     } catch (err: any) {
-      setError(err.message);
+      setError(friendlyAuthError(err.message));
     } finally {
       setSubmitting(false);
     }
@@ -296,11 +323,24 @@ function OnboardingContent() {
 
                     <p className="text-center text-xs text-gray-400">
                       Didn't get it?{' '}
+                      {resendCooldown > 0 ? (
+                        <span className="text-gray-400">
+                          Resend in {resendCooldown}s
+                        </span>
+                      ) : (
+                        <button
+                          onClick={handleResendMagicLink}
+                          className="underline text-gray-500 hover:text-teal-700"
+                        >
+                          Resend magic link
+                        </button>
+                      )}
+                      {' · '}
                       <button
-                        onClick={() => { setMagicLinkSent(false); setError(null); }}
-                        className="underline text-gray-500"
+                        onClick={() => { setMagicLinkSent(false); setError(null); setResendCooldown(0); }}
+                        className="underline text-gray-500 hover:text-teal-700"
                       >
-                        Try again
+                        Use a different email
                       </button>
                     </p>
                   </div>
